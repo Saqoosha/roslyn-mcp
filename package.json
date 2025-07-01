@@ -1,0 +1,45 @@
+{
+  "name": "roslyn-mcp",
+  "version": "0.1.0",
+  "description": "Comprehensive Roslyn LSP to MCP bridge for C# development",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "roslyn-mcp": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist",
+    "start": "node dist/cli.js"
+  },
+  "keywords": [
+    "roslyn",
+    "lsp",
+    "mcp",
+    "csharp",
+    "language-server",
+    "model-context-protocol"
+  ],
+  "author": "roslyn-mcp team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
