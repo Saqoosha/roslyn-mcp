@@ -4,6 +4,9 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
+import { resolve, dirname } from 'path';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 import type { ServerConfig, LSPRequest, LSPResponse, Logger } from '../types/index.js';
 import { createLogger } from '../infrastructure/logger.js';
 
@@ -149,7 +152,16 @@ export class RoslynLSPClient extends EventEmitter {
 
   private findRoslynLSP(): string {
     // Default path - will be configurable later
-    return '/Users/hiko/Desktop/csharp-ls-client/roslyn-lsp/content/LanguageServer/osx-arm64/Microsoft.CodeAnalysis.LanguageServer';
+    // Try relative path first (from project root), then fallback to absolute
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const projectDir = dirname(dirname(dirname(__dirname))); // Go up to project root
+    const relativePath = resolve(projectDir, 'runtime/roslyn-lsp/content/LanguageServer/osx-arm64/Microsoft.CodeAnalysis.LanguageServer');
+    
+    // Fallback to original absolute path if needed
+    const fallbackPath = '/Users/hiko/Desktop/csharp-ls-client/roslyn-lsp/content/LanguageServer/osx-arm64/Microsoft.CodeAnalysis.LanguageServer';
+    
+    return existsSync(relativePath) ? relativePath : fallbackPath;
   }
 
   private handleData(data: string): void {

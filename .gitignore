@@ -44,3 +44,18 @@ temp/
 
 # LSP logs
 /tmp/Microsoft.CodeAnalysis.LanguageServer.*.log
+
+# Large runtime binaries (download separately)
+runtime/
+
+# Archive/reference materials (too large for main repo)
+archive/
+
+# Test scripts in root (use tests/ directory instead)
+test-*.js
+test-*.cjs
+
+# Test projects with build artifacts
+test-projects/*/bin/
+test-projects/*/obj/
+test-projects/*/.mcp.json
