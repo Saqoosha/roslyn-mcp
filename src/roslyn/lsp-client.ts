@@ -155,13 +155,17 @@ export class RoslynLSPClient extends EventEmitter {
     // Try relative path first (from project root), then fallback to absolute
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
-    const projectDir = dirname(dirname(dirname(__dirname))); // Go up to project root
+    
+    // When compiled, this is in dist/index.js, so we only need to go up 1 level to project root
+    const projectDir = dirname(__dirname); // dist -> roslyn-mcp
     const relativePath = resolve(projectDir, 'runtime/roslyn-lsp/content/LanguageServer/osx-arm64/Microsoft.CodeAnalysis.LanguageServer');
     
     // Fallback to original absolute path if needed
     const fallbackPath = '/Users/hiko/Desktop/csharp-ls-client/roslyn-lsp/content/LanguageServer/osx-arm64/Microsoft.CodeAnalysis.LanguageServer';
     
-    return existsSync(relativePath) ? relativePath : fallbackPath;
+    const result = existsSync(relativePath) ? relativePath : fallbackPath;
+    this.logger.debug(`Using LSP path: ${result}`);
+    return result;
   }
 
   private handleData(data: string): void {
