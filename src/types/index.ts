@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import type { RoslynLSPClient } from '../roslyn/lsp-client.js';
 
 // MCP Tool definition interface
 export interface MCPTool {
@@ -18,7 +19,7 @@ export interface MCPTool {
 
 // Tool execution context
 export interface ToolContext {
-  lspClient: any; // Will be typed properly later
+  lspClient: RoslynLSPClient;
   projectRoot: string;
   logger: Logger;
 }
