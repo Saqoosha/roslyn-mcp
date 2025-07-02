@@ -63,3 +63,7 @@ test-projects/*/.mcp.json
 # Example projects with build artifacts
 examples/*/bin/
 examples/*/obj/
+
+# Cloned reference repositories (for investigation only)
+roslyn-source/
+vscode-csharp-source/

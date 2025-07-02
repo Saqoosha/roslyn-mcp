@@ -5,7 +5,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import { resolve, dirname } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import type { ServerConfig, LSPRequest, LSPResponse, Logger } from '../types/index.js';
 import { createLogger } from '../infrastructure/logger.js';
@@ -77,6 +77,10 @@ export class RoslynLSPClient extends EventEmitter {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       await this.initialize();
+      
+      // CRITICAL FIX: Load solution/projects for workspace symbols
+      await this.loadSolutionOrProjects();
+      
       this.logger.info('Roslyn LSP client started successfully');
     } catch (error) {
       this.logger.error('Failed to start LSP client:', error instanceof Error ? error.message : String(error));
@@ -228,8 +232,18 @@ export class RoslynLSPClient extends EventEmitter {
         }
       }
     } else {
-      // Notification
-      this.emit('notification', message);
+      // Notification - log important ones
+      const notification = message as any; // Fix TypeScript issue
+      if (notification.method === 'window/logMessage') {
+        const logLevel = notification.params?.type || 0;
+        const logMessage = notification.params?.message || '';
+        const levelName = ['', 'ERROR', 'WARN', 'INFO', 'LOG'][logLevel] || 'UNKNOWN';
+        this.logger.info(`LSP ${levelName}: ${logMessage}`);
+      } else if (notification.method === 'window/showMessage') {
+        this.logger.info(`LSP Message: ${notification.params?.message || ''}`);
+      }
+      
+      this.emit('notification', notification);
     }
   }
 
@@ -352,6 +366,63 @@ export class RoslynLSPClient extends EventEmitter {
     });
   }
 
+  async getCompletion(uri: string, line: number, character: number): Promise<any> {
+    return this.sendRequest('textDocument/completion', {
+      textDocument: { uri },
+      position: { line, character },
+      context: {
+        triggerKind: 1, // Invoked - completion was triggered by typing
+        triggerCharacter: undefined
+      }
+    });
+  }
+
+  async getSignatureHelp(uri: string, line: number, character: number): Promise<any> {
+    return this.sendRequest('textDocument/signatureHelp', {
+      textDocument: { uri },
+      position: { line, character },
+      context: {
+        triggerKind: 1, // Invoked - signature help was triggered by typing
+        triggerCharacter: undefined,
+        isRetrigger: false
+      }
+    });
+  }
+
+  async getCodeActions(uri: string, line: number, character: number, endLine: number, endCharacter: number, diagnostics?: any[]): Promise<any> {
+    return this.sendRequest('textDocument/codeAction', {
+      textDocument: { uri },
+      range: {
+        start: { line, character },
+        end: { line: endLine, character: endCharacter }
+      },
+      context: {
+        diagnostics: diagnostics || [],
+        only: undefined, // Request all types of code actions
+        triggerKind: 1 // Invoked
+      }
+    });
+  }
+
+  async getWorkspaceSymbols(query: string): Promise<any> {
+    return this.sendRequest('workspace/symbol', {
+      query
+    });
+  }
+
+  async getFormatting(uri: string, options: any): Promise<any> {
+    return this.sendRequest('textDocument/formatting', {
+      textDocument: { uri },
+      options: {
+        tabSize: options.tabSize || 4,
+        insertSpaces: options.insertSpaces !== false,
+        trimTrailingWhitespace: options.trimTrailingWhitespace !== false,
+        insertFinalNewline: options.insertFinalNewline !== false,
+        ...options
+      }
+    });
+  }
+
   // Document synchronization methods
   async openDocument(uri: string, languageId: string, content: string): Promise<void> {
     // Check if document is already open
@@ -464,5 +535,246 @@ export class RoslynLSPClient extends EventEmitter {
 
     // Now perform hover request
     return this.getHover(uri, line, character);
+  }
+
+  // Enhanced completion method with automatic document opening
+  async getCompletionWithDocSync(filePath: string, line: number, character: number): Promise<any> {
+    const { resolve: resolvePath } = await import('path');
+    const { readFileSync } = await import('fs');
+    
+    // Convert relative path to absolute URI
+    const absolutePath = resolvePath(this.config.projectRoot, filePath);
+    const uri = `file://${absolutePath}`;
+
+    // Open document if not already open
+    if (!this.isDocumentOpen(uri)) {
+      try {
+        const content = readFileSync(absolutePath, 'utf8');
+        await this.openDocument(uri, 'csharp', content);
+        
+        // Give LSP time to process the document
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
+      }
+    }
+
+    // Now perform completion request
+    return this.getCompletion(uri, line, character);
+  }
+
+  // Enhanced signature help method with automatic document opening
+  async getSignatureHelpWithDocSync(filePath: string, line: number, character: number): Promise<any> {
+    const { resolve: resolvePath } = await import('path');
+    const { readFileSync } = await import('fs');
+    
+    // Convert relative path to absolute URI
+    const absolutePath = resolvePath(this.config.projectRoot, filePath);
+    const uri = `file://${absolutePath}`;
+
+    // Open document if not already open
+    if (!this.isDocumentOpen(uri)) {
+      try {
+        const content = readFileSync(absolutePath, 'utf8');
+        await this.openDocument(uri, 'csharp', content);
+        
+        // Give LSP time to process the document
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
+      }
+    }
+
+    // Now perform signature help request
+    return this.getSignatureHelp(uri, line, character);
+  }
+
+  // Enhanced code actions method with automatic document opening
+  async getCodeActionsWithDocSync(filePath: string, line: number, character: number, endLine: number, endCharacter: number, diagnostics?: any[]): Promise<any> {
+    const { resolve: resolvePath } = await import('path');
+    const { readFileSync } = await import('fs');
+    
+    // Convert relative path to absolute URI
+    const absolutePath = resolvePath(this.config.projectRoot, filePath);
+    const uri = `file://${absolutePath}`;
+
+    // Open document if not already open
+    if (!this.isDocumentOpen(uri)) {
+      try {
+        const content = readFileSync(absolutePath, 'utf8');
+        await this.openDocument(uri, 'csharp', content);
+        
+        // Give LSP time to process the document
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
+      }
+    }
+
+    // Now perform code actions request
+    return this.getCodeActions(uri, line, character, endLine, endCharacter, diagnostics);
+  }
+
+  // Enhanced diagnostics method with automatic document opening
+  async getDiagnosticsWithDocSync(filePath: string): Promise<any> {
+    const { resolve: resolvePath } = await import('path');
+    const { readFileSync } = await import('fs');
+    
+    // Convert relative path to absolute URI
+    const absolutePath = resolvePath(this.config.projectRoot, filePath);
+    const uri = `file://${absolutePath}`;
+
+    // Open document if not already open
+    if (!this.isDocumentOpen(uri)) {
+      try {
+        const content = readFileSync(absolutePath, 'utf8');
+        await this.openDocument(uri, 'csharp', content);
+        
+        // Give LSP time to process the document and generate diagnostics
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
+      }
+    }
+
+    // Now perform diagnostics request
+    return this.getDiagnostics(uri);
+  }
+
+  // Enhanced formatting method with automatic document opening
+  async getFormattingWithDocSync(filePath: string, options: any): Promise<any> {
+    const { resolve: resolvePath } = await import('path');
+    const { readFileSync } = await import('fs');
+    
+    // Convert relative path to absolute URI
+    const absolutePath = resolvePath(this.config.projectRoot, filePath);
+    const uri = `file://${absolutePath}`;
+
+    // Open document if not already open
+    if (!this.isDocumentOpen(uri)) {
+      try {
+        const content = readFileSync(absolutePath, 'utf8');
+        await this.openDocument(uri, 'csharp', content);
+        
+        // Give LSP time to process the document
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
+      }
+    }
+
+    // Now perform formatting request
+    return this.getFormatting(uri, options);
+  }
+
+  // ===== SOLUTION/PROJECT LOADING METHODS (WORKSPACE SYMBOLS FIX) =====
+
+  /**
+   * Load solution or projects to enable workspace symbols
+   * This implements the same approach as VS Code C# extension
+   */
+  private async loadSolutionOrProjects(): Promise<void> {
+    try {
+      this.logger.info(`Starting solution/project discovery in: ${this.config.projectRoot}`);
+      
+      // Discover solution and project files
+      const solutionFile = this.findSolutionFile();
+      const projectFiles = this.findProjectFiles();
+
+      this.logger.info(`Discovery results - Solution: ${solutionFile}, Projects: ${projectFiles.length}`);
+
+      if (solutionFile) {
+        this.logger.info(`Loading solution: ${solutionFile}`);
+        await this.sendNotification('solution/open', {
+          solution: `file://${solutionFile}`
+        });
+      } else if (projectFiles.length > 0) {
+        this.logger.info(`Loading ${projectFiles.length} project(s): ${projectFiles.join(', ')}`);
+        await this.sendNotification('project/open', {
+          projects: projectFiles.map(f => `file://${f}`)
+        });
+      } else {
+        this.logger.warn('No solution or project files found - workspace symbols may not work');
+        return;
+      }
+
+      // Wait for project initialization to complete
+      await this.waitForProjectInitialization();
+      this.logger.info('Solution/project loading completed');
+
+    } catch (error) {
+      this.logger.error('Failed to load solution/projects:', error);
+      this.logger.error('Error details:', JSON.stringify(error, null, 2));
+      // Don't throw - workspace symbols simply won't work
+    }
+  }
+
+  /**
+   * Find solution file in project root
+   */
+  private findSolutionFile(): string | null {
+    try {
+      this.logger.info(`Scanning for solution files in: ${this.config.projectRoot}`);
+      const files = readdirSync(this.config.projectRoot);
+      this.logger.info(`Found files: ${files.join(', ')}`);
+      const solutionFiles = files.filter((f: string) => f.endsWith('.sln'));
+      this.logger.info(`Solution files: ${solutionFiles.join(', ')}`);
+      
+      if (solutionFiles.length > 0) {
+        const solutionFile = resolve(this.config.projectRoot, solutionFiles[0]);
+        this.logger.info(`Found solution file: ${solutionFile}`);
+        return solutionFile;
+      } else {
+        this.logger.info('No solution files found');
+      }
+    } catch (error) {
+      this.logger.error('Error scanning for solution files:', error);
+      throw error; // Re-throw to see what's happening
+    }
+
+    return null;
+  }
+
+  /**
+   * Find project files in project root
+   */
+  private findProjectFiles(): string[] {
+    try {
+      this.logger.info(`Scanning for project files in: ${this.config.projectRoot}`);
+      const files = readdirSync(this.config.projectRoot);
+      const projectFiles = files
+        .filter((f: string) => f.endsWith('.csproj') || f.endsWith('.vbproj') || f.endsWith('.fsproj'))
+        .map((f: string) => resolve(this.config.projectRoot, f));
+      
+      this.logger.info(`Found ${projectFiles.length} project file(s): ${projectFiles.join(', ')}`);
+      return projectFiles;
+    } catch (error) {
+      this.logger.error('Error scanning for project files:', error);
+      throw error; // Re-throw to see what's happening
+    }
+  }
+
+  /**
+   * Wait for project initialization complete notification
+   */
+  private async waitForProjectInitialization(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.removeListener('notification', handler);
+        this.logger.warn('Project initialization timeout - continuing anyway');
+        resolve(); // Don't fail, just continue
+      }, 30000); // 30 second timeout
+
+      const handler = (notification: any) => {
+        if (notification.method === 'project/initializationComplete') {
+          clearTimeout(timeout);
+          this.removeListener('notification', handler);
+          this.logger.info('Project initialization completed');
+          resolve();
+        }
+      };
+
+      this.on('notification', handler);
+    });
   }
 }
