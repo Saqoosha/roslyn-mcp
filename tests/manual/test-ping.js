@@ -4,10 +4,14 @@
  */
 
 import { spawn } from 'child_process';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 const projectPath = process.argv[2] || '.';
-const mcpPath = resolve(import.meta.url.replace('file://', ''), '../dist/cli.js');
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const mcpPath = resolve(__dirname, '../../dist/cli.js');
 
 console.log('🧪 Testing ping tool\n');
 

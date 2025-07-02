@@ -14,6 +14,9 @@ import { RoslynLSPClient } from './roslyn/lsp-client.js';
 import { createLogger } from './infrastructure/logger.js';
 import { pingTool } from './tools/ping.js';
 import { hoverTool } from './tools/hover.js';
+import { definitionsTool } from './tools/definitions.js';
+import { referencesTool } from './tools/references.js';
+import { documentSymbolsTool } from './tools/documentSymbols.js';
 import type { ServerConfig, MCPTool, ToolContext } from './types/index.js';
 
 export class RoslynMCPServer {
@@ -101,9 +104,14 @@ export class RoslynMCPServer {
   }
 
   private registerTools(): void {
-    // Register basic tools
+    // Register core tools
     this.registerTool(pingTool);
     this.registerTool(hoverTool);
+    
+    // Register LSP navigation tools
+    this.registerTool(definitionsTool);
+    this.registerTool(referencesTool);
+    this.registerTool(documentSymbolsTool);
     
     this.logger.info(`Registered ${this.tools.size} tools`);
   }

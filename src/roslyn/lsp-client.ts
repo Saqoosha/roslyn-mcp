@@ -47,6 +47,14 @@ export class RoslynLSPClient extends EventEmitter {
     timeout: NodeJS.Timeout;
   }>();
   private buffer = '';
+  
+  // Document synchronization state
+  private openDocuments = new Map<string, {
+    uri: string;
+    languageId: string;
+    version: number;
+    content: string;
+  }>();
 
   constructor(config: ServerConfig) {
     super();
@@ -342,5 +350,119 @@ export class RoslynLSPClient extends EventEmitter {
     return this.sendRequest('textDocument/diagnostic', {
       textDocument: { uri },
     });
+  }
+
+  // Document synchronization methods
+  async openDocument(uri: string, languageId: string, content: string): Promise<void> {
+    // Check if document is already open
+    if (this.openDocuments.has(uri)) {
+      this.logger.debug(`Document already open: ${uri}`);
+      return;
+    }
+
+    const version = 1;
+    
+    // Store document state
+    this.openDocuments.set(uri, {
+      uri,
+      languageId,
+      version,
+      content,
+    });
+
+    // Send textDocument/didOpen notification to LSP
+    await this.sendNotification('textDocument/didOpen', {
+      textDocument: {
+        uri,
+        languageId,
+        version,
+        text: content,
+      },
+    });
+
+    this.logger.debug(`Opened document: ${uri} (version ${version})`);
+  }
+
+  async changeDocument(uri: string, content: string, changes?: any[]): Promise<void> {
+    const doc = this.openDocuments.get(uri);
+    if (!doc) {
+      throw new Error(`Document not open: ${uri}`);
+    }
+
+    // Increment version
+    doc.version++;
+    doc.content = content;
+
+    // Send textDocument/didChange notification to LSP
+    const changeEvent = changes || [{
+      text: content, // Full document sync for simplicity
+    }];
+
+    await this.sendNotification('textDocument/didChange', {
+      textDocument: {
+        uri: doc.uri,
+        version: doc.version,
+      },
+      contentChanges: changeEvent,
+    });
+
+    this.logger.debug(`Changed document: ${uri} (version ${doc.version})`);
+  }
+
+  async closeDocument(uri: string): Promise<void> {
+    const doc = this.openDocuments.get(uri);
+    if (!doc) {
+      this.logger.debug(`Document not open: ${uri}`);
+      return;
+    }
+
+    // Remove from tracking
+    this.openDocuments.delete(uri);
+
+    // Send textDocument/didClose notification to LSP
+    await this.sendNotification('textDocument/didClose', {
+      textDocument: { uri },
+    });
+
+    this.logger.debug(`Closed document: ${uri}`);
+  }
+
+  // Utility methods for document management
+  isDocumentOpen(uri: string): boolean {
+    return this.openDocuments.has(uri);
+  }
+
+  getOpenDocuments(): string[] {
+    return Array.from(this.openDocuments.keys());
+  }
+
+  getDocumentVersion(uri: string): number | undefined {
+    return this.openDocuments.get(uri)?.version;
+  }
+
+  // Enhanced hover method with automatic document opening
+  async getHoverWithDocSync(filePath: string, line: number, character: number): Promise<any> {
+    const { resolve: resolvePath } = await import('path');
+    const { readFileSync } = await import('fs');
+    
+    // Convert relative path to absolute URI
+    const absolutePath = resolvePath(this.config.projectRoot, filePath);
+    const uri = `file://${absolutePath}`;
+
+    // Open document if not already open
+    if (!this.isDocumentOpen(uri)) {
+      try {
+        const content = readFileSync(absolutePath, 'utf8');
+        await this.openDocument(uri, 'csharp', content);
+        
+        // Give LSP time to process the document
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
+      }
+    }
+
+    // Now perform hover request
+    return this.getHover(uri, line, character);
   }
 }

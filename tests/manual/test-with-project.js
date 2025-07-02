@@ -5,15 +5,18 @@
  */
 
 import { spawn } from 'child_process';
-import { resolve, relative } from 'path';
+import { resolve, relative, dirname } from 'path';
 import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 
 const projectPath = process.argv[2] || '.';
 const testFile = process.argv[3] || 'Program.cs';
 const testLine = process.argv[4] ? parseInt(process.argv[4], 10) : 0;
 const testCharacter = process.argv[5] ? parseInt(process.argv[5], 10) : 0;
 
-const mcpPath = resolve(import.meta.url.replace('file://', ''), '../dist/cli.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const mcpPath = resolve(__dirname, '../../dist/cli.js');
 
 console.log('🧪 Testing roslyn-mcp with real project\n');
 console.log('📁 Project:', resolve(projectPath));

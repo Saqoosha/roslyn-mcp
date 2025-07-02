@@ -31,25 +31,25 @@ export function createLogger(level: LogLevel = 'info'): Logger {
   return {
     debug: (message: string, ...args: any[]) => {
       if (shouldLog('debug')) {
-        console.debug(formatMessage('debug', message, ...args));
+        process.stderr.write(formatMessage('debug', message, ...args) + '\n');
       }
     },
     
     info: (message: string, ...args: any[]) => {
       if (shouldLog('info')) {
-        console.info(formatMessage('info', message, ...args));
+        process.stderr.write(formatMessage('info', message, ...args) + '\n');
       }
     },
     
     warn: (message: string, ...args: any[]) => {
       if (shouldLog('warn')) {
-        console.warn(formatMessage('warn', message, ...args));
+        process.stderr.write(formatMessage('warn', message, ...args) + '\n');
       }
     },
     
     error: (message: string, ...args: any[]) => {
       if (shouldLog('error')) {
-        console.error(formatMessage('error', message, ...args));
+        process.stderr.write(formatMessage('error', message, ...args) + '\n');
       }
     },
   };

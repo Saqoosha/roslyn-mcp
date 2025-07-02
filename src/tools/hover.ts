@@ -31,12 +31,8 @@ async function executeHover(input: HoverInput, context: ToolContext): Promise<MC
       };
     }
 
-    // Resolve file path
-    const absolutePath = resolve(projectRoot, filePath);
-    const fileUri = `file://${absolutePath}`;
-
-    // Call LSP hover
-    const hoverResult = await lspClient.getHover(fileUri, line, character);
+    // Call LSP hover with automatic document synchronization
+    const hoverResult = await lspClient.getHoverWithDocSync(filePath, line, character);
 
     if (!hoverResult || !hoverResult.contents) {
       return {
