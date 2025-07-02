@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "roslyn-mcp": {
+      "command": "node",
+      "args": ["../../dist/cli.js"],
+      "env": {
+        "PROJECT_ROOT": "${PWD}",
+        "DOTNET_ROOT": "/opt/homebrew/share/dotnet"
+      }
+    }
+  }
+}

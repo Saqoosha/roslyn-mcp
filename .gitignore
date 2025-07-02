@@ -52,10 +52,14 @@ runtime/
 archive/
 
 # Test scripts in root (use tests/ directory instead)
-test-*.js
-test-*.cjs
+/test-*.js
+/test-*.cjs
 
 # Test projects with build artifacts
 test-projects/*/bin/
 test-projects/*/obj/
 test-projects/*/.mcp.json
+
+# Example projects with build artifacts
+examples/*/bin/
+examples/*/obj/
