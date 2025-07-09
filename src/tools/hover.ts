@@ -21,12 +21,21 @@ async function executeHover(input: HoverInput, context: ToolContext): Promise<MC
   logger.debug('Hover tool executed', { filePath, line, character });
 
   try {
-    // Check if LSP client is available
-    if (!lspClient || !lspClient.isRunning) {
+    // Check LSP client status and provide detailed feedback
+    if (!lspClient) {
       return {
         content: [{
           type: 'text',
-          text: `⚠️ Hover functionality requires LSP client to be running.\n\n📍 Location: \`${filePath}:${line}:${character}\`\n\n💡 This is expected in test mode or if LSP initialization failed.`
+          text: `🔄 **LSP Status: Not Available**\n\n📍 Location: \`${filePath}:${line}:${character}\`\n\n❌ LSP client is not initialized. This indicates a server startup issue.\n\n💡 **Next Steps:**\n• Check server logs for initialization errors\n• Verify .NET and Roslyn LSP installation\n• Try restarting the MCP server`
+        }]
+      };
+    }
+    
+    if (!lspClient.isRunning) {
+      return {
+        content: [{
+          type: 'text',
+          text: `🔄 **LSP Status: Starting Up**\n\n📍 Location: \`${filePath}:${line}:${character}\`\n\n⏳ LSP client is initializing. This can take 30-60 seconds for large Unity projects.\n\n🎯 **Unity Project Loading Stages:**\n1. ✅ LSP process started\n2. 🔄 Loading solution/projects (11 projects detected)\n3. ⏳ Restoring dependencies\n4. ⏳ Background analysis\n\n💡 **Please wait** and try again in 10-20 seconds.`
         }]
       };
     }

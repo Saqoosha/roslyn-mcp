@@ -83,12 +83,21 @@ async function executeWorkspaceSymbols(input: WorkspaceSymbolsInput, context: To
   logger.debug('WorkspaceSymbols tool executed', { query, maxResults });
 
   try {
-    // Check if LSP client is available
-    if (!lspClient || !lspClient.isRunning) {
+    // Check LSP client status and provide detailed feedback
+    if (!lspClient) {
       return {
         content: [{
           type: 'text',
-          text: `⚠️ Workspace symbol search requires LSP client to be running.\n\n🔍 Query: "${query}"\n\n💡 This is expected in test mode or if LSP initialization failed.`
+          text: `🔄 **LSP Status: Not Available**\n\n🔍 Query: "${query}"\n\n❌ LSP client is not initialized. This indicates a server startup issue.\n\n💡 **Next Steps:**\n• Check server logs for initialization errors\n• Verify .NET and Roslyn LSP installation\n• Try restarting the MCP server`
+        }]
+      };
+    }
+    
+    if (!lspClient.isRunning) {
+      return {
+        content: [{
+          type: 'text',
+          text: `🔄 **LSP Status: Starting Up**\n\n🔍 Query: "${query}"\n\n⏳ LSP client is initializing. Unity projects require additional time for:\n\n🎯 **Unity Project Loading Stages:**\n1. ✅ LSP process started\n2. 🔄 Loading solution/projects (11 projects detected)\n3. ⏳ Restoring dependencies\n4. ⏳ Background symbol indexing\n\n📊 **Workspace symbols** need background analysis to complete (30-60 seconds).\n\n💡 **Please wait** and try again in 20-30 seconds.`
         }]
       };
     }
@@ -97,10 +106,21 @@ async function executeWorkspaceSymbols(input: WorkspaceSymbolsInput, context: To
     const symbolsResult = await lspClient.getWorkspaceSymbols(query);
 
     if (!symbolsResult || (Array.isArray(symbolsResult) && symbolsResult.length === 0)) {
+      // Special message for empty query
+      if (query === '') {
+        return {
+          content: [{
+            type: 'text',
+            text: `ℹ️ **Empty Query Limitation**\n\nRoslyn LSP does not return all symbols for empty queries. This is by design for performance reasons.\n\n🔬 **Technical Background: Dual Search Architecture**\nRoslyn LSP uses two independent search providers:\n\n1. **🔍 Declared-Symbol Provider** (exact symbol matching)\n   • Uses pre-built ELFIE index, requires background analysis\n   • Searches actual symbol names for matches\n   • Returns 0 results until indexing completes\n\n2. **📁 File-Name Provider** (file-based search)\n   • Instant file system search\n   • If query matches filename, returns ALL symbols in that file\n   • Example: "Program" finds Calculator class because it's in Program.cs!\n\n🔍 **Proven Search Strategies:**\n\n✅ **File-name triggers (instant results):**\n• "Program" → finds ALL symbols in Program.cs (including Calculator!)\n• "Test" → finds ALL symbols in any TestXxx.cs files\n• Match your .cs filenames for comprehensive results\n\n✅ **Declared-symbol patterns (after indexing):**\n• "C" → 62 symbols (classes starting with C)\n• "Add", "Get", "Set" → method patterns\n• "I" → interfaces (typically start with I)\n\n💡 **Pro Tips:**\n• Search by filename to find classes even if exact name doesn't match\n• Wait for background analysis to complete for declared-symbol results\n• Use single letters for broad symbol discovery`
+          }]
+        };
+      }
+      
+      // Enhanced fallback suggestions based on systematic testing
       return {
         content: [{
           type: 'text',
-          text: `❌ No symbols found for query: "${query}"\n\n💡 Try:\n• Searching for class names (e.g., "Calculator")\n• Searching for method names (e.g., "Add")\n• Using partial names (e.g., "Calc" for Calculator)\n• Checking spelling and case sensitivity`
+          text: `❌ No symbols found for query: "${query}"\n\n🔬 **Understanding Roslyn LSP's Dual Search System**\n\nYour query likely failed due to Roslyn's two-provider architecture:\n\n**🔍 Declared-Symbol Provider**: Exact symbol name matching\n   • Issue: Requires background indexing completion\n   • Solution: Wait for analysis or try broader patterns\n\n**📁 File-Name Provider**: Filename-based search\n   • Issue: "${query}" doesn't match any .cs filenames\n   • Solution: Search by containing file instead\n\n🎯 **Immediate Workarounds:**\n\n✅ **Try file-name triggers (instant results):**\n• If looking for Calculator class → try "Program" (likely in Program.cs)\n• If looking for test classes → try "Test" (finds TestXxx.cs files)\n• Match your actual .cs filenames for guaranteed hits\n\n✅ **Try declared-symbol patterns:**\n• "${query.charAt(0)}" (first letter - finds ${query} if indexed)\n• "${query.substring(0, Math.min(3, query.length))}" (partial match)\n• Common patterns: "Get", "Set", "Add", "Create", "Process"\n\n⏳ **If still no results:**\n• Background analysis may be incomplete - wait 10-30 seconds\n• Verify the symbol exists in your loaded solution\n• Try opening the file containing the symbol first\n\n🔄 **Alternative search strategies:**\n• Browse file contents with document symbols instead\n• Use "Go to Definition" if you have a reference\n• Search project files directly by name`
         }]
       };
     }

@@ -1,0 +1,5 @@
+/Users/hiko/Desktop/csharp-ls-client/roslyn-mcp/test-projects/obj/Debug/net8.0/TestProject.GeneratedMSBuildEditorConfig.editorconfig
+/Users/hiko/Desktop/csharp-ls-client/roslyn-mcp/test-projects/obj/Debug/net8.0/TestProject.AssemblyInfoInputs.cache
+/Users/hiko/Desktop/csharp-ls-client/roslyn-mcp/test-projects/obj/Debug/net8.0/TestProject.AssemblyInfo.cs
+/Users/hiko/Desktop/csharp-ls-client/roslyn-mcp/test-projects/obj/Debug/net8.0/TestProject.csproj.CoreCompileInputs.cache
+/Users/hiko/Desktop/csharp-ls-client/roslyn-mcp/test-projects/obj/Debug/net8.0/TestProject.sourcelink.json
