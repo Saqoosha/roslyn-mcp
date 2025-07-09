@@ -38,17 +38,19 @@ npm run build
 ```
 
 ### Configuration
-Add to your Claude Code MCP configuration (`.mcp.json`):
 
+**Quick Setup (Single Command):**
+```bash
+claude mcp add roslyn-lsp node /path/to/roslyn-mcp/dist/cli.js /path/to/your/csharp/project
+```
+
+**Manual Configuration (`.mcp.json`):**
 ```json
 {
   "mcpServers": {
     "roslyn-lsp": {
       "command": "node",
-      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/your/csharp/project"],
-      "env": {
-        "PROJECT_ROOT": "/path/to/your/csharp/project"
-      }
+      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/your/csharp/project"]
     }
   }
 }
@@ -90,6 +92,13 @@ Roslyn MCP provides full Unity project support:
 - **Large Projects**: Fast-start mode for complex Unity solutions
 
 ### Unity Configuration
+
+**Quick Setup (Single Command):**
+```bash
+claude mcp add roslyn-lsp node /path/to/roslyn-mcp/dist/cli.js --fast-start /path/to/your/unity/project
+```
+
+**Manual Configuration (`.mcp.json`):**
 ```json
 {
   "mcpServers": {
