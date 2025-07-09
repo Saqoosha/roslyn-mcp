@@ -13,16 +13,16 @@ import {
 import { RoslynLSPClient } from './roslyn/lsp-client.js';
 import { createLogger } from './infrastructure/logger.js';
 import { pingTool } from './tools/ping.js';
-import { hoverTool } from './tools/hover.js';
 import { definitionsTool } from './tools/definitions.js';
 import { referencesTool } from './tools/references.js';
 import { documentSymbolsTool } from './tools/documentSymbols.js';
 import { completionTool } from './tools/completion.js';
-import { signatureHelpTool } from './tools/signatureHelp.js';
+// import { signatureHelpTool } from './tools/signatureHelp.js'; // REMOVED: Industry-wide limitation in Unity projects
 import { codeActionsTool } from './tools/codeActions.js';
 import { workspaceSymbolsTool } from './tools/workspaceSymbols.js';
 import { diagnosticsTool } from './tools/diagnostics.js';
 import { formattingTool } from './tools/formatting.js';
+import { renameTool } from './tools/rename.js';
 import type { ServerConfig, MCPTool, ToolContext } from './types/index.js';
 
 export class RoslynMCPServer {
@@ -112,7 +112,6 @@ export class RoslynMCPServer {
   private registerTools(): void {
     // Register core tools
     this.registerTool(pingTool);
-    this.registerTool(hoverTool);
     
     // Register LSP navigation tools
     this.registerTool(definitionsTool);
@@ -121,11 +120,12 @@ export class RoslynMCPServer {
     
     // Register IDE features
     this.registerTool(completionTool);
-    this.registerTool(signatureHelpTool);
+    // this.registerTool(signatureHelpTool); // REMOVED: Industry-wide limitation in Unity projects
     this.registerTool(codeActionsTool);
     this.registerTool(workspaceSymbolsTool);
     this.registerTool(diagnosticsTool);
     this.registerTool(formattingTool);
+    this.registerTool(renameTool);
     
     this.logger.info(`Registered ${this.tools.size} tools`);
   }

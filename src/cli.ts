@@ -3,6 +3,7 @@
  */
 
 import { RoslynMCPServer } from './server.js';
+import { FastStartRoslynMCPServer } from './server-fast-start.js';
 import type { ServerConfig } from './types/index.js';
 
 interface CLIArgs {
@@ -10,6 +11,7 @@ interface CLIArgs {
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
   timeout?: number;
   testMode?: boolean;
+  fastStart?: boolean;
   help?: boolean;
   version?: boolean;
 }
@@ -39,6 +41,11 @@ function parseArgs(): CLIArgs {
 
       case '--test-mode':
         args.testMode = true;
+        break;
+
+      case '--fast-start':
+      case '-f':
+        args.fastStart = true;
         break;
         
       case '--help':
@@ -79,6 +86,7 @@ OPTIONS:
   --log-level, -l <level>  Log level: debug, info, warn, error (default: info)
   --timeout, -t <ms>       LSP request timeout in milliseconds (default: 30000)
   --test-mode              Enable test mode (skip LSP client initialization)
+  --fast-start, -f         Enable fast-start mode (respond immediately, init in background)
   --help, -h               Show this help message
   --version, -v            Show version information
 
@@ -86,6 +94,7 @@ EXAMPLES:
   roslyn-mcp ./MyProject.sln
   roslyn-mcp --project ./src --log-level debug
   roslyn-mcp -p ./MyApp.csproj -l warn -t 60000
+  roslyn-mcp --fast-start ./LargeUnityProject  # For large projects
 
 For more information, visit: https://github.com/roslyn-mcp/roslyn-mcp
 `);
@@ -109,8 +118,8 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // Determine project root
-  const projectRoot = args.project || process.cwd();
+  // Determine project root - prioritize CLI arg, then env var, then current directory
+  const projectRoot = args.project || process.env.PROJECT_ROOT || process.cwd();
 
   // Validate project root
   try {
@@ -133,15 +142,16 @@ async function main(): Promise<void> {
     testMode: args.testMode || false,
   };
 
-  // Create and start server
-  const server = new RoslynMCPServer(config);
+  // Create and start server (use fast-start mode for large projects)
+  const server = args.fastStart 
+    ? new FastStartRoslynMCPServer(config)
+    : new RoslynMCPServer(config);
 
   // Handle graceful shutdown
   const shutdown = async (signal: string) => {
-    console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
+    // Don't use console.log after server starts - it breaks stdio communication!
     try {
       await server.stop();
-      console.log('✅ Server stopped successfully');
       process.exit(0);
     } catch (error) {
       console.error('❌ Error during shutdown:', error);
@@ -164,9 +174,9 @@ async function main(): Promise<void> {
   });
 
   try {
-    console.log('🚀 Starting Roslyn MCP Server...');
+    // Don't use console.log after server starts - it breaks stdio communication!
     await server.start();
-    console.log('✅ Server started successfully and ready to accept connections');
+    // Server is now running and communicating via stdio
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);

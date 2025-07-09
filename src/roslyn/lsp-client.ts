@@ -234,7 +234,11 @@ export class RoslynLSPClient extends EventEmitter {
     } else {
       // Notification - log important ones
       const notification = message as any; // Fix TypeScript issue
-      if (notification.method === 'window/logMessage') {
+      
+      // MICROSOFT C# EXTENSION COMPATIBILITY: Log critical notifications
+      if (notification.method === 'workspace/projectInitializationComplete') {
+        this.logger.info('🎉 RECEIVED: workspace/projectInitializationComplete notification');
+      } else if (notification.method === 'window/logMessage') {
         const logLevel = notification.params?.type || 0;
         const logMessage = notification.params?.message || '';
         const levelName = ['', 'ERROR', 'WARN', 'INFO', 'LOG'][logLevel] || 'UNKNOWN';
@@ -667,6 +671,109 @@ export class RoslynLSPClient extends EventEmitter {
     return this.getFormatting(uri, options);
   }
 
+  // ===== RENAME METHODS =====
+
+  /**
+   * Prepare rename - check if position is renameable
+   */
+  async getPrepareRename(uri: string, line: number, character: number): Promise<any> {
+    return this.sendRequest('textDocument/prepareRename', {
+      textDocument: { uri },
+      position: { line, character }
+    });
+  }
+
+  /**
+   * Get rename edits for a symbol at a specific position
+   */
+  async getRename(uri: string, line: number, character: number, newName: string): Promise<any> {
+    return this.sendRequest('textDocument/rename', {
+      textDocument: { uri },
+      position: { line, character },
+      newName
+    });
+  }
+
+  /**
+   * Enhanced rename method with automatic document opening and prepare rename validation
+   */
+  async getRenameWithDocSync(filePath: string, line: number, character: number, newName: string): Promise<any> {
+    const { resolve: resolvePath } = await import('path');
+    const { readFileSync } = await import('fs');
+    
+    // Convert relative path to absolute URI
+    const absolutePath = resolvePath(this.config.projectRoot, filePath);
+    const uri = `file://${absolutePath}`;
+
+    // Open document if not already open
+    if (!this.isDocumentOpen(uri)) {
+      try {
+        const content = readFileSync(absolutePath, 'utf8');
+        await this.openDocument(uri, 'csharp', content);
+        
+        // Give LSP time to process the document
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
+      }
+    }
+
+    // CRITICAL: First call prepareRename to validate the position
+    let prepareResult;
+    try {
+      prepareResult = await this.getPrepareRename(uri, line, character);
+      this.logger.info('🔍 Prepare rename result:', JSON.stringify(prepareResult, null, 2));
+      
+      // If prepareRename fails or returns nothing, the position is not renameable
+      if (!prepareResult) {
+        this.logger.info('❌ prepareRename returned null/undefined');
+        return {
+          error: {
+            code: -32600,
+            message: 'Position is not renameable - prepareRename returned no result',
+            details: { prepareResult: null }
+          }
+        };
+      }
+      
+      if (prepareResult.error) {
+        this.logger.info('❌ prepareRename returned error:', prepareResult.error);
+        return {
+          error: {
+            code: -32600,
+            message: `Position is not renameable - prepareRename error: ${prepareResult.error.message}`,
+            details: { prepareResult }
+          }
+        };
+      }
+    } catch (error) {
+      this.logger.info('❌ prepareRename threw exception:', error);
+      return {
+        error: {
+          code: -32600,
+          message: `Prepare rename failed: ${error instanceof Error ? error.message : String(error)}`,
+          details: { exception: error }
+        }
+      };
+    }
+
+    // Now perform actual rename request
+    try {
+      const renameResult = await this.getRename(uri, line, character, newName);
+      this.logger.info('🔄 Rename result:', JSON.stringify(renameResult, null, 2));
+      return renameResult;
+    } catch (error) {
+      this.logger.info('❌ getRename threw exception:', error);
+      return {
+        error: {
+          code: -32600,
+          message: `Rename failed: ${error instanceof Error ? error.message : String(error)}`,
+          details: { exception: error, prepareResult }
+        }
+      };
+    }
+  }
+
   // ===== SOLUTION/PROJECT LOADING METHODS (WORKSPACE SYMBOLS FIX) =====
 
   /**
@@ -683,6 +790,12 @@ export class RoslynLSPClient extends EventEmitter {
 
       this.logger.info(`Discovery results - Solution: ${solutionFile}, Projects: ${projectFiles.length}`);
 
+      // CRITICAL: Run dotnet restore before loading solution/projects
+      // This ensures proper hover information and dependency resolution
+      if (solutionFile || projectFiles.length > 0) {
+        await this.runDotnetRestore(solutionFile || projectFiles[0]);
+      }
+
       if (solutionFile) {
         this.logger.info(`Loading solution: ${solutionFile}`);
         await this.sendNotification('solution/open', {
@@ -698,6 +811,10 @@ export class RoslynLSPClient extends EventEmitter {
         return;
       }
 
+      // CRITICAL: Wait for projectInitializationComplete notification FROM server
+      // Microsoft's C# extension waits for this notification from Roslyn LSP
+      this.logger.info('Waiting for workspace/projectInitializationComplete notification from server...');
+      
       // Wait for project initialization to complete
       await this.waitForProjectInitialization();
       this.logger.info('Solution/project loading completed');
@@ -710,18 +827,16 @@ export class RoslynLSPClient extends EventEmitter {
   }
 
   /**
-   * Find solution file in project root
+   * Find solution file recursively in workspace (like C# Dev Kit)
    */
   private findSolutionFile(): string | null {
     try {
-      this.logger.info(`Scanning for solution files in: ${this.config.projectRoot}`);
-      const files = readdirSync(this.config.projectRoot);
-      this.logger.info(`Found files: ${files.join(', ')}`);
-      const solutionFiles = files.filter((f: string) => f.endsWith('.sln'));
+      this.logger.info(`Scanning for solution files recursively in: ${this.config.projectRoot}`);
+      const solutionFiles = this.findFilesRecursively(this.config.projectRoot, /\.(sln|slnf)$/);
       this.logger.info(`Solution files: ${solutionFiles.join(', ')}`);
       
       if (solutionFiles.length > 0) {
-        const solutionFile = resolve(this.config.projectRoot, solutionFiles[0]);
+        const solutionFile = solutionFiles[0]; // Take first solution file found
         this.logger.info(`Found solution file: ${solutionFile}`);
         return solutionFile;
       } else {
@@ -736,15 +851,12 @@ export class RoslynLSPClient extends EventEmitter {
   }
 
   /**
-   * Find project files in project root
+   * Find project files recursively in workspace (like C# Dev Kit)
    */
   private findProjectFiles(): string[] {
     try {
-      this.logger.info(`Scanning for project files in: ${this.config.projectRoot}`);
-      const files = readdirSync(this.config.projectRoot);
-      const projectFiles = files
-        .filter((f: string) => f.endsWith('.csproj') || f.endsWith('.vbproj') || f.endsWith('.fsproj'))
-        .map((f: string) => resolve(this.config.projectRoot, f));
+      this.logger.info(`Scanning for project files recursively in: ${this.config.projectRoot}`);
+      const projectFiles = this.findFilesRecursively(this.config.projectRoot, /\.(csproj|vbproj|fsproj)$/);
       
       this.logger.info(`Found ${projectFiles.length} project file(s): ${projectFiles.join(', ')}`);
       return projectFiles;
@@ -752,6 +864,39 @@ export class RoslynLSPClient extends EventEmitter {
       this.logger.error('Error scanning for project files:', error);
       throw error; // Re-throw to see what's happening
     }
+  }
+
+  /**
+   * Recursively find files matching pattern (mimics VS Code workspace.findFiles)
+   */
+  private findFilesRecursively(dir: string, pattern: RegExp, maxDepth: number = 10): string[] {
+    const results: string[] = [];
+    
+    if (maxDepth <= 0) return results;
+    
+    try {
+      const entries = readdirSync(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = resolve(dir, entry.name);
+        
+        // Skip common excluded directories (like C# Dev Kit does)
+        if (entry.isDirectory()) {
+          if (entry.name === 'node_modules' || entry.name === 'bin' || entry.name === 'obj' || 
+              entry.name === '.git' || entry.name === 'Temp' || entry.name === 'Library') {
+            continue;
+          }
+          results.push(...this.findFilesRecursively(fullPath, pattern, maxDepth - 1));
+        } else if (entry.isFile() && pattern.test(entry.name)) {
+          results.push(fullPath);
+        }
+      }
+    } catch (error) {
+      // Ignore directories we can't read
+      this.logger.debug(`Cannot read directory: ${dir}, ${error}`);
+    }
+    
+    return results;
   }
 
   /**
@@ -763,18 +908,86 @@ export class RoslynLSPClient extends EventEmitter {
         this.removeListener('notification', handler);
         this.logger.warn('Project initialization timeout - continuing anyway');
         resolve(); // Don't fail, just continue
-      }, 30000); // 30 second timeout
+      }, this.config.timeout || 120000); // Use config timeout or 120 second default for large projects
 
       const handler = (notification: any) => {
-        if (notification.method === 'project/initializationComplete') {
+        if (notification.method === 'workspace/projectInitializationComplete') {
           clearTimeout(timeout);
           this.removeListener('notification', handler);
-          this.logger.info('Project initialization completed');
+          this.logger.info('🎉 Project initialization completed - workspace symbols should now work');
           resolve();
         }
       };
 
       this.on('notification', handler);
     });
+  }
+
+  /**
+   * Run dotnet restore to ensure project dependencies are available
+   * This is critical for proper hover information and IntelliSense
+   */
+  private async runDotnetRestore(solutionOrProjectPath: string): Promise<void> {
+    try {
+      this.logger.info(`Running dotnet restore for: ${solutionOrProjectPath}`);
+      
+      const projectDir = dirname(solutionOrProjectPath);
+      const fileName = solutionOrProjectPath.split('/').pop() || '';
+      
+      return new Promise((resolve, reject) => {
+        const restoreProcess = spawn('dotnet', ['restore', fileName], {
+          cwd: projectDir,
+          stdio: ['ignore', 'pipe', 'pipe']
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        restoreProcess.stdout?.on('data', (data) => {
+          stdout += data.toString();
+        });
+
+        restoreProcess.stderr?.on('data', (data) => {
+          stderr += data.toString();
+        });
+
+        restoreProcess.on('close', (code) => {
+          if (code === 0) {
+            this.logger.info(`✅ dotnet restore completed successfully`);
+            this.logger.debug(`Restore output: ${stdout.trim()}`);
+            resolve();
+          } else {
+            this.logger.warn(`⚠️ dotnet restore failed with code ${code}`);
+            this.logger.warn(`Restore error: ${stderr.trim()}`);
+            this.logger.warn(`Restore output: ${stdout.trim()}`);
+            this.logger.info('Continuing without restore - hover functionality may be limited');
+            // Don't reject - continue without restore
+            resolve();
+          }
+        });
+
+        restoreProcess.on('error', (error) => {
+          this.logger.warn(`⚠️ Failed to run dotnet restore: ${error.message}`);
+          this.logger.info('Continuing without restore - hover functionality may be limited');
+          // Don't reject - continue without restore
+          resolve();
+        });
+
+        // Set timeout for restore operation
+        setTimeout(() => {
+          if (!restoreProcess.killed) {
+            restoreProcess.kill();
+            this.logger.warn('⚠️ dotnet restore timed out after 60 seconds');
+            this.logger.info('Continuing without restore - hover functionality may be limited');
+            resolve();
+          }
+        }, 60000); // 60 second timeout
+      });
+
+    } catch (error) {
+      this.logger.warn(`Failed to run dotnet restore: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.info('Continuing without restore - hover functionality may be limited');
+      // Don't throw - continue without restore
+    }
   }
 }

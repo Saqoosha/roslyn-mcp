@@ -107,10 +107,13 @@ await this.loadSolutionOrProjects();
 ## 🎯 Success Criteria Met
 
 - ✅ `workspace/symbol` requests return actual symbols
-- ✅ Empty query returns all available symbols  
+- ⚠️ Empty query returns all available symbols - **Note: Roslyn LSP limitation**
 - ✅ Specific queries (e.g., "Calculator") return relevant matches
 - ✅ Symbol search works across project files
 - ✅ No manual solution loading required
+
+### Known Limitation
+Roslyn LSP does not return all symbols for empty queries. This appears to be by design for performance reasons. Users should use specific queries or single letters to find symbols.
 
 ## 🚀 Impact
 
