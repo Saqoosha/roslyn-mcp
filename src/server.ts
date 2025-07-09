@@ -17,7 +17,7 @@ import { definitionsTool } from './tools/definitions.js';
 import { referencesTool } from './tools/references.js';
 import { documentSymbolsTool } from './tools/documentSymbols.js';
 import { completionTool } from './tools/completion.js';
-import { signatureHelpTool } from './tools/signatureHelp.js';
+// import { signatureHelpTool } from './tools/signatureHelp.js'; // REMOVED: Industry-wide limitation in Unity projects
 import { codeActionsTool } from './tools/codeActions.js';
 import { workspaceSymbolsTool } from './tools/workspaceSymbols.js';
 import { diagnosticsTool } from './tools/diagnostics.js';
@@ -120,7 +120,7 @@ export class RoslynMCPServer {
     
     // Register IDE features
     this.registerTool(completionTool);
-    this.registerTool(signatureHelpTool);
+    // this.registerTool(signatureHelpTool); // REMOVED: Industry-wide limitation in Unity projects
     this.registerTool(codeActionsTool);
     this.registerTool(workspaceSymbolsTool);
     this.registerTool(diagnosticsTool);
