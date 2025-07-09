@@ -11,7 +11,7 @@ interface CLIArgs {
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
   timeout?: number;
   testMode?: boolean;
-  fastStart?: boolean;
+  synchronous?: boolean;
   help?: boolean;
   version?: boolean;
 }
@@ -43,9 +43,10 @@ function parseArgs(): CLIArgs {
         args.testMode = true;
         break;
 
-      case '--fast-start':
-      case '-f':
-        args.fastStart = true;
+      case '--synchronous':
+      case '--sync':
+      case '-s':
+        args.synchronous = true;
         break;
         
       case '--help':
@@ -86,15 +87,15 @@ OPTIONS:
   --log-level, -l <level>  Log level: debug, info, warn, error (default: info)
   --timeout, -t <ms>       LSP request timeout in milliseconds (default: 30000)
   --test-mode              Enable test mode (skip LSP client initialization)
-  --fast-start, -f         Enable fast-start mode (respond immediately, init in background)
+  --synchronous, -s        Use synchronous mode (wait for full initialization)
   --help, -h               Show this help message
   --version, -v            Show version information
 
 EXAMPLES:
-  roslyn-mcp ./MyProject.sln
-  roslyn-mcp --project ./src --log-level debug
-  roslyn-mcp -p ./MyApp.csproj -l warn -t 60000
-  roslyn-mcp --fast-start ./LargeUnityProject  # For large projects
+  roslyn-mcp ./MyProject.sln                    # Default (fast-start mode)
+  roslyn-mcp --project ./src --log-level debug  # With debug logging
+  roslyn-mcp -p ./MyApp.csproj -l warn -t 60000 # With custom timeout
+  roslyn-mcp --synchronous ./SmallProject       # Use synchronous mode
 
 For more information, visit: https://github.com/roslyn-mcp/roslyn-mcp
 `);
@@ -142,10 +143,10 @@ async function main(): Promise<void> {
     testMode: args.testMode || false,
   };
 
-  // Create and start server (use fast-start mode for large projects)
-  const server = args.fastStart 
-    ? new FastStartRoslynMCPServer(config)
-    : new RoslynMCPServer(config);
+  // Create and start server (fast-start is now the default)
+  const server = args.synchronous 
+    ? new RoslynMCPServer(config)
+    : new FastStartRoslynMCPServer(config);
 
   // Handle graceful shutdown
   const shutdown = async (signal: string) => {

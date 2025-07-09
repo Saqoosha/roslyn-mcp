@@ -14,7 +14,7 @@ Roslyn MCP provides comprehensive C# language support for Claude Code, enabling 
 - **Document Formatting**: Automatic C# code formatting according to conventions
 - **Symbol Renaming**: Safe renaming across entire codebase
 - **Unity Support**: Complete Unity project integration with assembly loading
-- **Fast-Start Mode**: Background initialization for large projects
+- **Fast-Start Mode**: Background initialization (enabled by default)
 - **Zero Configuration**: Automatic project discovery and dependency resolution
 
 ## 🛠️ Installation
@@ -89,13 +89,13 @@ Roslyn MCP provides full Unity project support:
 - **Unity Assemblies**: All Unity packages and dependencies automatically loaded
 - **MonoBehaviour**: Full IntelliSense for Unity base classes
 - **Custom Assemblies**: Support for custom assembly definitions (.asmdef)
-- **Large Projects**: Fast-start mode for complex Unity solutions
+- **Large Projects**: Optimized for complex Unity solutions with background initialization
 
 ### Unity Configuration
 
 **Quick Setup (Single Command):**
 ```bash
-claude mcp add roslyn-lsp node /path/to/roslyn-mcp/dist/cli.js --fast-start /path/to/your/unity/project
+claude mcp add roslyn-lsp node /path/to/roslyn-mcp/dist/cli.js /path/to/your/unity/project
 ```
 
 **Manual Configuration (`.mcp.json`):**
@@ -106,13 +106,14 @@ claude mcp add roslyn-lsp node /path/to/roslyn-mcp/dist/cli.js --fast-start /pat
       "command": "node",
       "args": [
         "/path/to/roslyn-mcp/dist/cli.js",
-        "--fast-start",
         "/path/to/your/unity/project"
       ]
     }
   }
 }
 ```
+
+**Note**: Fast-start mode is now enabled by default, providing optimal performance for both small and large Unity projects.
 
 ## 🚀 Development
 

@@ -234,15 +234,13 @@ export class FastStartRoslynMCPServer {
       this.initProgress = 60;
       this.initMessage = 'Loading C# projects...';
       
-      // Give time for project loading
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // No artificial delays - LSP client handles project loading internally
       
       this.readinessState = ReadinessState.INDEXING;
-      this.initProgress = 85;
+      this.initProgress = 90;
       this.initMessage = 'Building symbol index...';
       
-      // Give time for indexing
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // No artificial delays - indexing happens as part of LSP initialization
       
       this.readinessState = ReadinessState.READY;
       this.initProgress = 100;

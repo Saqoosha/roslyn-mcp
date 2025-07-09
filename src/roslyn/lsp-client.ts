@@ -73,9 +73,7 @@ export class RoslynLSPClient extends EventEmitter {
     try {
       await this.startLSPProcess();
       
-      // Give the LSP process a moment to start up
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // No artificial delay - initialize immediately after process starts
       await this.initialize();
       
       // CRITICAL FIX: Load solution/projects for workspace symbols
