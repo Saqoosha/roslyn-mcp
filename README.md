@@ -1,143 +1,92 @@
 # Roslyn MCP
 
-**Professional C# Language Server for Claude Code via Model Context Protocol**
+**C# IntelliSense for Claude Code**
 
-Roslyn MCP provides comprehensive C# language support for Claude Code, enabling advanced code analysis, navigation, refactoring, and diagnostics through Microsoft's official Roslyn LSP server.
+Get professional C# development tools in Claude Code - error checking, code completion, navigation, and refactoring for any C# project.
 
-## 🚀 Features
+## ✨ What You Get
 
-- **10 Reliable C# Tools**: Complete language server integration with 100% success rate
-- **Real-time Diagnostics**: Error detection, warnings, and code suggestions
-- **Code Navigation**: Go to definition, find references, symbol search
-- **Intelligent Completion**: Context-aware code completion with type information
-- **Code Actions**: Quick fixes, refactoring suggestions, and code improvements
-- **Document Formatting**: Automatic C# code formatting according to conventions
-- **Symbol Renaming**: Safe renaming across entire codebase
-- **Unity Support**: Complete Unity project integration with assembly loading
-- **Fast-Start Mode**: Background initialization (enabled by default)
-- **Zero Configuration**: Automatic project discovery and dependency resolution
+- **Error Detection**: Real-time syntax and logic error checking
+- **Code Completion**: Smart IntelliSense with type information
+- **Code Navigation**: Jump to definitions, find references
+- **Refactoring**: Safe renaming across your entire project
+- **Code Formatting**: Automatic C# formatting
+- **Unity Support**: Full Unity project integration with MonoBehaviour, Unity.Logging, and custom assemblies
 
-## 🛠️ Installation
+## 🚀 Quick Setup
 
 ### Prerequisites
-- **Node.js 18+** and **npm**
-- **.NET 8.0+** SDK
-- **Claude Code** (Claude.ai/code)
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **.NET 8.0+** - [Download here](https://dotnet.microsoft.com/download)
+- **Claude Code** - [Get it here](https://claude.ai/code)
 
-### Setup
+### Installation
+
 ```bash
-# Clone the repository
+# 1. Clone and build
 git clone https://github.com/Saqoosha/roslyn-mcp.git
 cd roslyn-mcp
-
-# Install dependencies
 npm install
-
-# Build the project
 npm run build
+
+# 2. Add to Claude Code (replace paths with your actual paths)
+claude mcp add roslyn-lsp -- node /path/to/roslyn-mcp/dist/cli.js /path/to/your/csharp/project
 ```
 
-### Configuration
+That's it! Claude Code will now have C# superpowers.
 
-**Quick Setup (Single Command):**
-```bash
-claude mcp add roslyn-lsp node /path/to/roslyn-mcp/dist/cli.js /path/to/your/csharp/project
+## 💬 How to Use
+
+Just chat with Claude Code naturally about your C# code:
+
+```
+"Check my Program.cs for errors"
+"Find all places where Calculator is used"
+"Rename the method AddNumbers to Sum"
+"Format this C# file"
+"What classes are in my project?"
+"Help me fix this Unity script"
 ```
 
-**Manual Configuration (`.mcp.json`):**
-```json
-{
-  "mcpServers": {
-    "roslyn-lsp": {
-      "command": "node",
-      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/your/csharp/project"]
-    }
-  }
-}
-```
+Claude will automatically use the right tools to help you.
 
-## 🎯 Usage
+## 📁 Supported Projects
 
-Once configured, Claude Code will automatically use Roslyn MCP tools when working with C# code:
+Works with any C# project:
+- ✅ Console applications
+- ✅ Web APIs (ASP.NET Core)
+- ✅ Unity projects (any version)
+- ✅ Class libraries
+- ✅ Solution files (.sln)
+- ✅ Individual projects (.csproj)
 
-- **"Check for errors in Program.cs"** → Uses `lsp_get_diagnostics`
-- **"Find all references to Calculator class"** → Uses `lsp_find_references`
-- **"Rename method AddNumbers to Sum"** → Uses `lsp_rename_symbol`
-- **"Format this C# file"** → Uses `lsp_format_document`
-- **"What classes are in this project?"** → Uses `lsp_get_workspace_symbols`
+## 🎮 Unity Features
 
-## 🔧 Available Tools
-
-| Tool | Description |
-|------|-------------|
-| `lsp_get_diagnostics` | Get errors, warnings, and suggestions |
-| `lsp_get_completion` | Code completion with type information |
-| `lsp_get_definitions` | Navigate to symbol definitions |
-| `lsp_find_references` | Find all references to a symbol |
-| `lsp_get_document_symbols` | List all symbols in a file |
-| `lsp_get_workspace_symbols` | Search symbols across entire project |
-| `lsp_get_code_actions` | Get quick fixes and refactoring suggestions |
-| `lsp_rename_symbol` | Rename symbols across the project |
-| `lsp_format_document` | Format C# code according to conventions |
-| `ping` | Server health check |
-
-## 🎮 Unity Projects
-
-Roslyn MCP provides full Unity project support:
-
-- **Unity.Logging**: Complete support for `Log.Info()`, `Log.Warning()`, etc.
-- **Unity Assemblies**: All Unity packages and dependencies automatically loaded
 - **MonoBehaviour**: Full IntelliSense for Unity base classes
-- **Custom Assemblies**: Support for custom assembly definitions (.asmdef)
-- **Large Projects**: Optimized for complex Unity solutions with background initialization
+- **Unity.Logging**: Complete support for `Log.Info()`, `Log.Warning()`, etc.
+- **Custom Assemblies**: Works with assembly definitions (.asmdef)
+- **Large Projects**: Handles complex Unity solutions automatically
 
-### Unity Configuration
+## 🔧 Troubleshooting
 
-**Quick Setup (Single Command):**
+**"Server not starting"**: Check Node.js and .NET installation
+**"No symbols found"**: Make sure you're pointing to your project root directory
+**"Unity errors"**: Ensure your Unity project has a .sln file (open once in Unity Editor)
+
+Run this to test your setup:
 ```bash
-claude mcp add roslyn-lsp node /path/to/roslyn-mcp/dist/cli.js /path/to/your/unity/project
-```
-
-**Manual Configuration (`.mcp.json`):**
-```json
-{
-  "mcpServers": {
-    "roslyn-lsp": {
-      "command": "node",
-      "args": [
-        "/path/to/roslyn-mcp/dist/cli.js",
-        "/path/to/your/unity/project"
-      ]
-    }
-  }
-}
-```
-
-**Note**: Fast-start mode is now enabled by default, providing optimal performance for both small and large Unity projects.
-
-## 🚀 Development
-
-```bash
-# Development mode
-npm run dev
-
-# Run tests
-npm run test
-
-# Build for production
-npm run build
+node /path/to/roslyn-mcp/dist/cli.js --help
 ```
 
 ## 📚 Documentation
 
-- [Installation Guide](docs/INSTALLATION.md) - Detailed setup instructions
-- [API Reference](docs/API.md) - Complete tool documentation
-- [Examples](docs/EXAMPLES.md) - Usage examples and patterns
-- [Claude Code Integration](docs/CLAUDE.md) - Claude Code specific configuration
+- [Detailed Installation](docs/INSTALLATION.md)
+- [Advanced Configuration](docs/CLAUDE.md)
+- [Usage Examples](docs/EXAMPLES.md)
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Contributions welcome! See [Contributing Guide](CONTRIBUTING.md).
 
 ## 📄 License
 
@@ -145,4 +94,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built with Microsoft's Roslyn LSP for professional C# development in Claude Code*
+*Professional C# development in Claude Code, powered by Microsoft's Roslyn*
