@@ -52,7 +52,7 @@ Roslyn MCP provides 10 reliable C# development tools:
 
 Roslyn MCP provides comprehensive Unity project support:
 
-- **Unity.Logging**: Complete support for Unity's logging system
+- **Unity Packages**: Complete support for all Unity packages and APIs
 - **MonoBehaviour**: Full IntelliSense for Unity base classes
 - **Unity Assemblies**: All Unity packages and dependencies automatically loaded
 - **Custom Assemblies**: Support for assembly definitions (.asmdef)
@@ -81,7 +81,7 @@ Roslyn MCP provides comprehensive Unity project support:
 - Apply quick fixes and refactoring suggestions
 
 ### Unity Development
-- Work with Unity.Logging for better performance
+- Work with Unity packages and logging systems
 - Navigate Unity-specific classes and methods
 - Understand MonoBehaviour lifecycle methods
 
@@ -90,7 +90,7 @@ Roslyn MCP provides comprehensive Unity project support:
 - **Average Response Time**: ~50ms for most operations
 - **Initialization Time**: 5-10 seconds for typical projects
 - **Unity Projects**: 15-30 seconds with automatic assembly loading
-- **Large Projects**: 30-60 seconds (use --fast-start mode)
+- **Large Projects**: 30-60 seconds
 - **Success Rate**: 100% reliability (10/10 tools working)
 
 ## 🎯 Key Features
@@ -120,7 +120,7 @@ docs/
 - **Server not starting**: Check Node.js and .NET installation
 - **No symbols found**: Allow 5-10 seconds for workspace indexing
 - **Unity errors**: Ensure Unity project is properly configured
-- **Performance issues**: Use --fast-start mode for large projects
+- **Performance issues**: Large projects may take 1-2 minutes to initialize
 
 ### Support Resources
 - Check the [Installation Guide](INSTALLATION.md) for setup issues

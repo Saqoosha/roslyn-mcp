@@ -1,76 +1,122 @@
 # Claude Code Integration Guide
 
-This guide explains how to integrate Roslyn MCP with Claude Code for professional C# development.
+This guide shows how to set up C# IntelliSense in Claude Code using Roslyn MCP.
 
 ## Quick Setup
 
-Add to your Claude Code MCP configuration (`.mcp.json`):
+Add Roslyn MCP to your Claude Code configuration:
+
+```bash
+claude mcp add roslyn-lsp -- node /path/to/roslyn-mcp/dist/cli.js /path/to/your/csharp/project
+```
+
+Or manually edit your `.mcp.json` file:
 
 ```json
 {
   "mcpServers": {
     "roslyn-lsp": {
       "command": "node",
-      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/your/csharp/project"],
-      "env": {
-        "PROJECT_ROOT": "/path/to/your/csharp/project"
-      }
+      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/your/csharp/project"]
     }
   }
 }
 ```
 
-## Available Tools
+## What You Can Do
 
-Roslyn MCP provides 10 reliable C# development tools:
+Once configured, chat naturally with Claude Code about your C# projects:
+
+### Code Analysis
+```
+"Check this file for errors"
+"What warnings do I have in Program.cs?"
+"Are there any issues with my code?"
+```
 
 ### Code Navigation
-- **`lsp_get_definitions`** - Navigate to symbol definitions
-- **`lsp_find_references`** - Find all references to a symbol
-- **`lsp_get_document_symbols`** - List all symbols in a file
-- **`lsp_get_workspace_symbols`** - Search symbols across entire project
-
-### Code Intelligence
-- **`lsp_get_completion`** - Get code completion suggestions with type information
-- **`lsp_get_code_actions`** - Get quick fixes and refactoring suggestions
-- **`lsp_get_diagnostics`** - Get errors, warnings, and suggestions
+```
+"Show me all methods in this class"
+"Find where Calculator is used"
+"Go to the definition of AddNumbers"
+"What classes are in my project?"
+```
 
 ### Code Editing
-- **`lsp_rename_symbol`** - Rename symbols across the project
-- **`lsp_format_document`** - Format C# code according to conventions
-
-### System
-- **`ping`** - Server health check
-
-## Usage Examples
-
-Once configured, Claude Code will automatically use these tools when you ask for C# development assistance:
-
 ```
-"Check for errors in Program.cs"
-→ Uses lsp_get_diagnostics
-
-"Find all references to Calculator class"
-→ Uses lsp_find_references
-
-"Rename method AddNumbers to Sum"
-→ Uses lsp_rename_symbol
-
+"Rename this variable to 'totalAmount'"
 "Format this C# file"
-→ Uses lsp_format_document
-
-"What classes are in this project?"
-→ Uses lsp_get_workspace_symbols
-
-"Show me completion options for this method"
-→ Uses lsp_get_completion
+"Fix the indentation in my code"
 ```
 
-## Unity Project Support
+### Code Completion
+```
+"What methods are available on this object?"
+"Show me all Console methods"
+"What can I call on this string?"
+```
 
-Roslyn MCP provides comprehensive Unity project support:
+### Unity Development
+```
+"Check this MonoBehaviour script"
+"Find all Debug.Log usage"
+"What Unity classes are available?"
+"Help me fix this Unity script error"
+```
 
-### Configuration for Unity
+## Project Types
+
+Works with any C# project structure:
+
+- **Console Apps**: Point to folder with `.csproj`
+- **Web APIs**: Point to solution root with `.sln`
+- **Unity Projects**: Point to Unity project root (same level as Assets folder)
+- **Class Libraries**: Any folder with C# files and project file
+
+## Troubleshooting
+
+### Common Issues
+
+**"No C# features available"**
+- Restart Claude Code after configuration
+- Check that your project path is correct
+- Verify Node.js and .NET are installed
+
+**"Server not responding"**
+- Make sure the path to `cli.js` is correct
+- Test with: `node /path/to/cli.js --help`
+- Check Claude Code logs for errors
+
+**"Unity project not working"**
+- Ensure your Unity project has a `.sln` file
+- Open Unity Editor once to generate solution files
+- Point to the Unity project root (where Assets/ folder is)
+
+**"Symbols not found"**
+- Large projects may take 1-2 minutes to initialize
+- Check that you're pointing to the project root, not a subfolder
+- For Unity: make sure you have Library/ folder (project was opened in Unity)
+
+### Testing Your Setup
+
+1. Check CLI works:
+```bash
+node /path/to/roslyn-mcp/dist/cli.js --help
+```
+
+2. Test with Claude Code:
+```
+"Is the C# server running?"
+```
+
+3. Try a simple request:
+```
+"Check my Program.cs for any errors"
+```
+
+## Advanced Configuration
+
+### Custom Timeout (for large projects)
 ```json
 {
   "mcpServers": {
@@ -78,36 +124,6 @@ Roslyn MCP provides comprehensive Unity project support:
       "command": "node",
       "args": [
         "/path/to/roslyn-mcp/dist/cli.js",
-        "--fast-start",
-        "/path/to/your/unity/project"
-      ],
-      "env": {
-        "PROJECT_ROOT": "/path/to/your/unity/project"
-      }
-    }
-  }
-}
-```
-
-### Unity Features
-- **Unity.Logging**: Complete support for `Log.Info()`, `Log.Warning()`, etc.
-- **Unity Assemblies**: All Unity packages and dependencies automatically loaded
-- **MonoBehaviour**: Full IntelliSense for Unity base classes
-- **Custom Assemblies**: Support for assembly definitions (.asmdef)
-- **Large Projects**: Fast-start mode for complex Unity solutions
-
-## Large Project Configuration
-
-For complex projects that may take longer to initialize:
-
-```json
-{
-  "mcpServers": {
-    "roslyn-lsp": {
-      "command": "node",
-      "args": [
-        "/path/to/roslyn-mcp/dist/cli.js",
-        "--fast-start",
         "--timeout", "180000",
         "/path/to/your/project"
       ]
@@ -116,89 +132,35 @@ For complex projects that may take longer to initialize:
 }
 ```
 
-**Fast-Start Mode Benefits:**
-- Immediate tool availability during initialization
-- Background loading of complex solutions
-- Progressive enhancement as features become ready
-- No timeout issues with large codebases
+### Multiple Projects
+You can configure multiple C# projects:
 
-## System Requirements
-
-- **Node.js 18+** and **npm**
-- **.NET 8.0+** SDK
-- **Claude Code** (Claude.ai/code)
-
-## Environment Variables
-
-- **`PROJECT_ROOT`**: Path to your C# project or solution
-- **`DOTNET_ROOT`**: Path to .NET installation (optional, auto-detected)
-
-## Architecture
-
-The system consists of three main components:
-
-1. **Roslyn LSP Server**: Microsoft's official C# language server
-2. **MCP Bridge**: Translates between LSP and MCP protocols
-3. **Claude Code Integration**: Exposes tools via MCP protocol
-
-## Common Workflows
-
-### Code Analysis
-```
-"Analyze this C# file for issues"
-→ Uses lsp_get_diagnostics + lsp_get_code_actions
+```json
+{
+  "mcpServers": {
+    "roslyn-lsp-main": {
+      "command": "node",
+      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/main/project"]
+    },
+    "roslyn-lsp-unity": {
+      "command": "node",
+      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/unity/project"]
+    }
+  }
+}
 ```
 
-### Code Navigation
-```
-"Show me all methods in this class"
-→ Uses lsp_get_document_symbols
+## Performance Notes
 
-"Find where this method is called"
-→ Uses lsp_find_references
-```
+- **Small projects**: Ready in 5-10 seconds
+- **Unity projects**: May take 1-3 minutes for full initialization
+- **Large solutions**: Background loading continues while basic features work
+- **Subsequent uses**: Faster startup due to caching
 
-### Code Refactoring
-```
-"Rename this variable throughout the project"
-→ Uses lsp_rename_symbol
-
-"Format this file and fix code style"
-→ Uses lsp_format_document
-```
-
-### Unity Development
-```
-"Check Unity.Logging usage in this script"
-→ Uses lsp_get_diagnostics with Unity context
-
-"Find all MonoBehaviour classes"
-→ Uses lsp_get_workspace_symbols
-```
-
-## Performance
-
-- **Average Response Time**: ~50ms for most operations
-- **Initialization Time**: 5-10 seconds for typical projects
-- **Large Projects**: 30-40 seconds with fast-start mode
-- **Success Rate**: 100% reliability (10/10 tools working)
-
-## Troubleshooting
-
-### Common Issues
-
-**Server not starting**: Check Node.js and .NET installation
-**No symbols found**: Allow 5-10 seconds for workspace indexing
-**Unity errors**: Ensure Unity project is properly configured
-
-### Getting Help
-
-- Check server logs for detailed error information
-- Use `ping` tool to verify server health
-- Refer to the [Troubleshooting Guide](TROUBLESHOOTING.md) for common issues
-
-## Next Steps
+## Getting Help
 
 - [Installation Guide](INSTALLATION.md) - Complete setup instructions
-- [API Reference](API.md) - Detailed tool documentation
-- [Examples](EXAMPLES.md) - More usage examples and patterns
+- [Examples](EXAMPLES.md) - More usage examples
+- [API Reference](API.md) - Technical details for advanced users
+
+For issues, check the [GitHub repository](https://github.com/Saqoosha/roslyn-mcp) or create an issue.

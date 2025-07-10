@@ -1,295 +1,192 @@
 # Installation Guide
 
-This guide provides detailed setup instructions for Roslyn MCP with Claude Code.
+Complete setup instructions for getting C# IntelliSense working in Claude Code.
 
 ## Prerequisites
 
-Before installing Roslyn MCP, ensure you have:
+Before installing, make sure you have:
 
-- **Node.js 18+** and **npm** - [Download Node.js](https://nodejs.org/)
+- **Node.js 18+** - [Download Node.js](https://nodejs.org/)
 - **.NET 8.0+ SDK** - [Download .NET](https://dotnet.microsoft.com/download)
 - **Claude Code** - [Get Claude Code](https://claude.ai/code)
 
+### Verify Prerequisites
+
+```bash
+# Check Node.js version
+node --version
+# Should show v18.0.0 or higher
+
+# Check .NET version
+dotnet --version
+# Should show 8.0.0 or higher
+```
+
 ## Installation Steps
 
-### 1. Clone and Build
+### Step 1: Get Roslyn MCP
 
 ```bash
 # Clone the repository
 git clone https://github.com/Saqoosha/roslyn-mcp.git
 cd roslyn-mcp
 
-# Install dependencies
+# Install dependencies and build
 npm install
-
-# Build the project
 npm run build
 ```
 
-### 2. Verify Installation
+### Step 2: Test Installation
 
 ```bash
-# Test the CLI
+# Test the CLI works
 node dist/cli.js --help
 
-# Verify .NET is available
-dotnet --version
+# You should see the help message with available options
 ```
 
-### 3. Configure Claude Code
+### Step 3: Add to Claude Code
 
-Create or edit your Claude Code MCP configuration file (`.mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "roslyn-lsp": {
-      "command": "node",
-      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/your/csharp/project"],
-      "env": {
-        "PROJECT_ROOT": "/path/to/your/csharp/project"
-      }
-    }
-  }
-}
-```
-
-**Important**: Replace `/path/to/roslyn-mcp` with the actual path to your cloned repository.
-
-## Configuration Options
-
-### Basic Configuration
-
-For small to medium C# projects:
-
-```json
-{
-  "mcpServers": {
-    "roslyn-lsp": {
-      "command": "node",
-      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/your/project"],
-      "env": {
-        "PROJECT_ROOT": "/path/to/your/project"
-      }
-    }
-  }
-}
-```
-
-### Unity Project Configuration
-
-For Unity projects, use fast-start mode for better performance:
-
-```json
-{
-  "mcpServers": {
-    "roslyn-lsp": {
-      "command": "node",
-      "args": [
-        "/path/to/roslyn-mcp/dist/cli.js",
-        "--fast-start",
-        "/path/to/your/unity/project"
-      ],
-      "env": {
-        "PROJECT_ROOT": "/path/to/your/unity/project"
-      }
-    }
-  }
-}
-```
-
-### Large Project Configuration
-
-For enterprise or complex projects with long initialization times:
-
-```json
-{
-  "mcpServers": {
-    "roslyn-lsp": {
-      "command": "node",
-      "args": [
-        "/path/to/roslyn-mcp/dist/cli.js",
-        "--fast-start",
-        "--timeout", "180000",
-        "/path/to/your/project"
-      ],
-      "env": {
-        "PROJECT_ROOT": "/path/to/your/project"
-      }
-    }
-  }
-}
-```
-
-## Environment Variables
-
-### Required Variables
-
-- **`PROJECT_ROOT`**: Path to your C# project or solution directory
-
-### Optional Variables
-
-- **`DOTNET_ROOT`**: Path to .NET installation (auto-detected if not specified)
-- **`ROSLYN_LSP_PATH`**: Custom path to Roslyn LSP binaries (uses bundled version if not specified)
-
-### Example with Custom Variables
-
-```json
-{
-  "mcpServers": {
-    "roslyn-lsp": {
-      "command": "node",
-      "args": ["/path/to/roslyn-mcp/dist/cli.js", "/path/to/your/project"],
-      "env": {
-        "PROJECT_ROOT": "/path/to/your/project",
-        "DOTNET_ROOT": "/usr/local/share/dotnet",
-        "ROSLYN_LSP_PATH": "/custom/path/to/roslyn"
-      }
-    }
-  }
-}
-```
-
-## Command Line Options
-
-### Available Options
-
-- **`--fast-start`**: Enable fast-start mode for large projects
-- **`--timeout <ms>`**: Set initialization timeout in milliseconds
-- **`--help`**: Show help information
-- **`--version`**: Show version information
-
-### Examples
+Use the simple one-command setup:
 
 ```bash
-# Regular mode
-node dist/cli.js /path/to/project
-
-# Fast-start mode
-node dist/cli.js --fast-start /path/to/project
-
-# Custom timeout
-node dist/cli.js --fast-start --timeout 300000 /path/to/project
+# Replace paths with your actual paths
+claude mcp add roslyn-lsp -- node /absolute/path/to/roslyn-mcp/dist/cli.js /absolute/path/to/your/csharp/project
 ```
 
-## Project Structure Requirements
+**Important**: Use absolute paths (full paths starting with `/` on Mac/Linux or `C:\` on Windows).
 
-### C# Console Applications
+### Step 4: Restart Claude Code
 
-Your project should have:
-- A `.csproj` file or `.sln` solution file
-- Valid C# source files (`.cs`)
-- Proper NuGet package references (if any)
+After adding the MCP server, restart Claude Code to load the new configuration.
 
-### Unity Projects
+### Step 5: Test It Works
 
-Your Unity project should have:
-- A `.sln` solution file (generated by Unity)
-- Assembly definition files (`.asmdef`) if using custom assemblies
-- Proper Unity package references
-
-### Example Project Structure
-
+In Claude Code, try asking:
 ```
-MyProject/
-├── MyProject.sln          # Solution file
-├── MyProject.csproj       # Project file
-├── Program.cs             # C# source files
-├── Models/
-│   └── User.cs
-└── bin/                   # Build output (auto-generated)
+"Is the C# server running?"
 ```
 
-## Verification
+You should get a response showing the server is healthy.
 
-### 1. Test Claude Code Connection
+## Example Setups
 
-Open Claude Code and try:
-```
-"Check if Roslyn MCP is working"
-```
+### Console Application
+```bash
+# If your project structure is:
+# /Users/yourname/MyApp/
+#   ├── Program.cs
+#   └── MyApp.csproj
 
-You should see tools like `lsp_get_diagnostics` being used.
-
-### 2. Test Basic Functionality
-
-```
-"What C# files are in my project?"
-→ Uses lsp_get_workspace_symbols
-
-"Check for errors in Program.cs"
-→ Uses lsp_get_diagnostics
+claude mcp add roslyn-lsp -- node /Users/yourname/roslyn-mcp/dist/cli.js /Users/yourname/MyApp
 ```
 
-### 3. Verify Unity Support (if applicable)
+### Unity Project
+```bash
+# If your Unity project structure is:
+# /Users/yourname/MyGame/
+#   ├── Assets/
+#   ├── Library/
+#   └── MyGame.sln
 
+claude mcp add roslyn-lsp -- node /Users/yourname/roslyn-mcp/dist/cli.js /Users/yourname/MyGame
 ```
-"Find all MonoBehaviour classes"
-→ Uses lsp_get_workspace_symbols with Unity context
 
-"Check Unity.Logging usage"
-→ Uses lsp_get_diagnostics with Unity assemblies
+### ASP.NET Core Web API
+```bash
+# If your solution structure is:
+# /Users/yourname/MyWebAPI/
+#   ├── MyWebAPI.sln
+#   ├── src/
+#   └── tests/
+
+claude mcp add roslyn-lsp -- node /Users/yourname/roslyn-mcp/dist/cli.js /Users/yourname/MyWebAPI
 ```
 
-## Troubleshooting
+## Troubleshooting Installation
 
-### Common Issues
+### "Command not found: claude"
+Make sure Claude Code is installed and the `claude` command is available in your terminal.
 
-#### "Command not found" or "Module not found"
+### "npm install fails"
+- Check your Node.js version: `node --version`
+- Try deleting `node_modules` and running `npm install` again
+- On Windows, you might need to run as Administrator
 
-- Ensure Node.js and npm are properly installed
-- Verify the path to `dist/cli.js` is correct
-- Run `npm run build` to ensure the project is built
+### "dotnet --version fails"
+- Install .NET SDK from [dotnet.microsoft.com](https://dotnet.microsoft.com/download)
+- Restart your terminal after installation
+- On Mac, you might need to add to your PATH
 
-#### "No symbols found" or "Empty workspace"
+### "node dist/cli.js --help shows error"
+- Make sure you ran `npm run build` successfully
+- Check that the `dist/` folder was created
+- Try rebuilding: `npm run clean && npm run build`
 
-- Ensure `PROJECT_ROOT` points to the correct directory
-- Check that your project has a `.csproj` or `.sln` file
-- Allow 5-10 seconds for workspace indexing after startup
+### "MCP server not showing up in Claude Code"
+- Check your `.mcp.json` syntax is valid
+- Restart Claude Code completely
+- Verify the file paths in your configuration are correct and absolute
 
-#### ".NET not found" errors
+### "C# features not working"
+- Make sure your project has a `.csproj` or `.sln` file
+- For Unity: open the project in Unity Editor once to generate solution files
+- Large projects may take 1-2 minutes to initialize
+- Try asking: "Is the C# server running?" to check status
 
-- Ensure .NET SDK is installed: `dotnet --version`
-- Check `DOTNET_ROOT` environment variable if using custom installation
-- Verify your project targets a supported .NET version
+## Manual Configuration
 
-#### Unity-specific issues
+If you prefer to edit your `.mcp.json` file manually:
 
-- Ensure Unity has generated the solution file (`.sln`)
-- Check that Unity project compiles without errors
-- Verify Unity package references are properly configured
+```json
+{
+  "mcpServers": {
+    "roslyn-lsp": {
+      "command": "node",
+      "args": ["/absolute/path/to/roslyn-mcp/dist/cli.js", "/absolute/path/to/your/project"]
+    }
+  }
+}
+```
 
-### Getting Help
+The `.mcp.json` file is typically located at:
+- **Mac/Linux**: `~/.claude/mcp.json`
+- **Windows**: `%USERPROFILE%\.claude\mcp.json`
 
-If you encounter issues:
+## Updating
 
-1. Check the Claude Code logs for detailed error messages
-2. Verify your configuration matches the examples above
-3. Test with a simple C# project first
-4. Refer to the [Troubleshooting Guide](TROUBLESHOOTING.md) for more solutions
-
-## Next Steps
-
-- [API Reference](API.md) - Learn about available tools
-- [Examples](EXAMPLES.md) - See usage examples
-- [Claude Code Integration](CLAUDE.md) - Claude Code specific features
-
-## Development Setup
-
-If you want to contribute or modify Roslyn MCP:
+To update to the latest version:
 
 ```bash
-# Install development dependencies
+cd roslyn-mcp
+git pull
 npm install
-
-# Run in development mode
-npm run dev
-
-# Run tests
-npm run test
-
-# Build for production
 npm run build
 ```
 
-For more development information, see the [Contributing Guide](../CONTRIBUTING.md).
+No need to reconfigure Claude Code - just restart it to pick up the new version.
+
+## Uninstalling
+
+To remove Roslyn MCP from Claude Code:
+
+```bash
+claude mcp remove roslyn-lsp
+```
+
+Or manually edit your `.mcp.json` file to remove the `roslyn-lsp` entry.
+
+## Getting Help
+
+If you run into issues:
+
+1. Check the [troubleshooting section](#troubleshooting-installation) above
+2. Review the [Claude Code Integration Guide](CLAUDE.md)
+3. Create an issue on [GitHub](https://github.com/Saqoosha/roslyn-mcp)
+
+Include this information when reporting issues:
+- Your operating system
+- Node.js version (`node --version`)
+- .NET version (`dotnet --version`)
+- The exact error message
+- Your project type (Unity, console app, etc.)

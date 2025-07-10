@@ -1,6 +1,16 @@
 # API Reference
 
-This document provides detailed information about all available Roslyn MCP tools.
+> **Note for Most Users**: You don't need to read this! Just chat naturally with Claude Code like "check my code for errors" or "find all references to Calculator". This document is for advanced users who want to understand the technical details.
+
+For normal usage, see:
+- [Installation Guide](INSTALLATION.md) - How to set up
+- [Claude Code Integration](CLAUDE.md) - How to use with natural language
+
+---
+
+## Advanced Technical Reference
+
+This document provides detailed information about the internal tools that power C# IntelliSense in Claude Code.
 
 ## Tool Overview
 
@@ -449,7 +459,7 @@ All tools work with Unity's assembly system:
 
 - **Small Projects**: 5-10 seconds
 - **Unity Projects**: 15-30 seconds
-- **Large Projects**: 30-60 seconds (use --fast-start)
+- **Large Projects**: 30-60 seconds
 
 ### Memory Usage
 
@@ -489,7 +499,7 @@ All tools work with Unity's assembly system:
 ### Performance Tips
 
 - Allow 5-10 seconds for initial workspace indexing
-- Use fast-start mode for large projects
+- Large projects may take longer to initialize (1-2 minutes)
 - Cache results for repeated queries
 - Use specific queries for workspace symbol search
 

@@ -1,517 +1,393 @@
 # Usage Examples
 
-This guide provides practical examples of using Roslyn MCP with Claude Code for C# development.
+Practical examples of using C# IntelliSense in Claude Code with Roslyn MCP.
 
 ## Getting Started
 
-Once Roslyn MCP is configured, Claude Code will automatically use the appropriate tools based on your requests. Here are common scenarios and examples.
+Once Roslyn MCP is configured, just chat naturally with Claude Code about your C# projects. Here are common scenarios.
 
-## Code Analysis Examples
+## Code Analysis
 
-### Error Detection and Fixing
+### Finding and Fixing Errors
 
-**Scenario**: You want to check for errors in your C# code.
+**What you say**: "Check for errors in Program.cs"
 
+**What happens**: Claude analyzes your file and reports issues.
+
+**Example response**:
 ```
-User: "Check for errors in Program.cs"
+Found 2 errors in Program.cs:
 
-Claude Code: I'll analyze Program.cs for errors and warnings.
-→ Uses: lsp_get_diagnostics
-
-Result: Found 2 errors:
 1. Line 15: The name 'variableName' does not exist in the current context
-2. Line 22: Missing semicolon after statement
+   - Suggestion: Check spelling or add missing using statement
+
+2. Line 22: Missing semicolon after statement  
+   - Suggestion: Add ';' at end of line
 ```
 
-**Follow-up**: Get suggestions for fixing errors.
+**Follow-up**: "What fixes are available for line 15?"
 
+**Response**:
 ```
-User: "What fixes are available for the error on line 15?"
-
-Claude Code: I'll check available quick fixes for that location.
-→ Uses: lsp_get_code_actions
-
-Result: Available fixes:
-1. Generate variable 'variableName'
-2. Add using statement for missing namespace
-3. Change to 'variableName' (similar identifier)
+Available quick fixes for line 15:
+1. Generate local variable 'variableName'
+2. Generate field 'variableName'  
+3. Add using statement for missing namespace
+4. Did you mean 'variableName2'? (similar identifier)
 ```
 
 ### Code Quality Analysis
 
-**Scenario**: Comprehensive code quality check.
+**What you say**: "Analyze this project for code quality issues"
 
+**What happens**: Claude checks all your C# files for problems.
+
+**Example response**:
 ```
-User: "Analyze this entire C# project for code quality issues"
+Code quality analysis complete:
 
-Claude Code: I'll analyze all C# files for errors, warnings, and suggestions.
-→ Uses: lsp_get_diagnostics (for multiple files)
+📁 Program.cs - 2 warnings
+• Line 8: Variable 'temp' assigned but never used
+• Line 15: Consider using 'var' for type inference
 
-Result: Found issues in 3 files:
-- Program.cs: 2 errors, 1 warning
-- Calculator.cs: 1 warning (unused variable)
-- Models/User.cs: 3 suggestions (code style improvements)
+📁 Calculator.cs - 1 suggestion  
+• Line 23: Method can be made static
+
+📁 Models/User.cs - Clean ✅
+
+Overall: 3 minor issues found, no critical errors.
 ```
 
-## Code Navigation Examples
+## Code Navigation
 
 ### Finding Definitions
 
-**Scenario**: You want to understand where a class or method is defined.
+**What you say**: "Go to the definition of Calculator"
 
+**What happens**: Claude shows where Calculator is defined.
+
+**Example response**:
 ```
-User: "Show me the definition of the Calculator class"
+Calculator is defined in:
+📁 /src/Calculator.cs at line 12
 
-Claude Code: I'll find the definition of Calculator class.
-→ Uses: lsp_get_definitions
-
-Result: Calculator class is defined in:
-- File: /project/Calculator.cs
-- Line: 10, Column: 18
-- Preview: public class Calculator
+public class Calculator
+{
+    public int Add(int a, int b) => a + b;
+    public int Subtract(int a, int b) => a - b;
+}
 ```
 
 ### Finding References
 
-**Scenario**: You want to see where a method is used throughout your project.
+**What you say**: "Find all places where Calculator is used"
 
+**What happens**: Claude shows everywhere Calculator appears.
+
+**Example response**:
 ```
-User: "Find all places where AddNumbers method is used"
+Found 8 references to Calculator:
 
-Claude Code: I'll search for all references to AddNumbers method.
-→ Uses: lsp_find_references
+📁 Program.cs
+• Line 15: var calc = new Calculator();
+• Line 16: var result = calc.Add(5, 3);
 
-Result: Found 5 references:
-1. Program.cs:25 - var result = calc.AddNumbers(5, 3);
-2. Tests.cs:15 - Assert.AreEqual(8, calc.AddNumbers(5, 3));
-3. Calculator.cs:12 - Method definition
-4. Documentation.md:45 - Code example
-5. Utils.cs:30 - var sum = calculator.AddNumbers(x, y);
-```
+📁 Tests/CalculatorTests.cs  
+• Line 12: private Calculator _calculator;
+• Line 18: _calculator = new Calculator();
+• Line 23: Assert.AreEqual(8, _calculator.Add(5, 3));
 
-### Project Structure Exploration
-
-**Scenario**: You want to understand the overall structure of your project.
-
-```
-User: "What classes and methods are in this project?"
-
-Claude Code: I'll show you the structure of your project.
-→ Uses: lsp_get_workspace_symbols
-
-Result: Found 15 symbols:
-Classes:
-- Calculator (Calculator.cs)
-- AdvancedCalculator (Advanced/AdvancedCalculator.cs)
-- User (Models/User.cs)
-- Program (Program.cs)
-
-Methods:
-- AddNumbers, SubtractNumbers (Calculator.cs)
-- ComplexCalculation (AdvancedCalculator.cs)
-- Main (Program.cs)
+📁 Services/MathService.cs
+• Line 7: private readonly Calculator _calc;
+• Line 12: public MathService(Calculator calculator)
+• Line 18: return _calc.Multiply(a, b);
 ```
 
-### File-Level Symbol Analysis
+### Exploring Code Structure
 
-**Scenario**: You want to see all symbols in a specific file.
+**What you say**: "What classes and methods are in this file?"
 
+**What happens**: Claude shows the file's structure.
+
+**Example response**:
 ```
-User: "Show me all methods and properties in Calculator.cs"
+Structure of Calculator.cs:
 
-Claude Code: I'll list all symbols in Calculator.cs.
-→ Uses: lsp_get_document_symbols
+📦 Calculator (class)
+├── ➕ Add(int a, int b) → int
+├── ➖ Subtract(int a, int b) → int  
+├── ✖️ Multiply(int a, int b) → int
+└── ➗ Divide(int a, int b) → double
 
-Result: Calculator.cs contains:
-- Class: Calculator
-  - Property: Name (string)
-  - Method: AddNumbers(int a, int b) → int
-  - Method: SubtractNumbers(int a, int b) → int
-  - Method: GetResult() → double
-  - Private field: _lastResult
-```
-
-## Code Completion Examples
-
-### IntelliSense and Auto-completion
-
-**Scenario**: You want to see what methods are available on an object.
-
-```
-User: "What methods can I call on the Console object?"
-
-Claude Code: I'll show you available methods on Console.
-→ Uses: lsp_get_completion
-
-Result: Available Console methods:
-- WriteLine(string) - Writes line to output
-- Write(string) - Writes text to output
-- ReadLine() - Reads line from input
-- Clear() - Clears the console screen
-- Beep() - Makes a beep sound
+📦 CalculatorExtensions (static class)
+└── 🔢 ToPercentage(this double value) → string
 ```
 
-### Method Parameter Information
+**What you say**: "What classes are in my entire project?"
 
-**Scenario**: You want to understand method parameters.
+**What happens**: Claude searches across all files.
 
+**Example response**:
 ```
-User: "What parameters does String.Format accept?"
+Classes in your project:
 
-Claude Code: I'll show you the String.Format method overloads.
-→ Uses: lsp_get_completion
+📁 /src/Calculator.cs
+• Calculator
+• CalculatorExtensions
 
-Result: String.Format overloads:
-1. Format(string format, object arg0)
-2. Format(string format, object arg0, object arg1)
-3. Format(string format, params object[] args)
-4. Format(IFormatProvider provider, string format, params object[] args)
-```
+📁 /src/Models/User.cs  
+• User
+• UserSettings
 
-### Type-Specific Completion
+📁 /src/Services/MathService.cs
+• MathService
+• IMathService (interface)
 
-**Scenario**: You want to see properties available on a custom type.
-
-```
-User: "What properties are available on the User class?"
-
-Claude Code: I'll show you User class properties.
-→ Uses: lsp_get_completion
-
-Result: User class properties:
-- Id (int) - User identifier
-- Name (string) - User's full name
-- Email (string) - User's email address
-- CreatedAt (DateTime) - Account creation date
-- IsActive (bool) - Account status
+Total: 5 classes, 1 interface
 ```
 
-## Code Refactoring Examples
+## Code Editing
 
-### Symbol Renaming
+### Renaming Symbols
 
-**Scenario**: You want to rename a method across your entire project.
+**What you say**: "Rename the method AddNumbers to Sum"
 
+**What happens**: Claude renames it everywhere in your project.
+
+**Example response**:
 ```
-User: "Rename the AddNumbers method to CalculateSum throughout the project"
+Renamed 'AddNumbers' to 'Sum' in 4 locations:
 
-Claude Code: I'll rename AddNumbers to CalculateSum across all files.
-→ Uses: lsp_rename_symbol
+📁 Calculator.cs - Line 15: Method definition
+📁 Program.cs - Line 23: Method call  
+📁 Tests/CalculatorTests.cs - Line 18: Test method call
+📁 Documentation.md - Line 45: Code example
 
-Result: Renamed in 8 locations:
-- Calculator.cs:12 - Method definition
-- Calculator.cs:15 - Method documentation
-- Program.cs:25 - Method call
-- Tests.cs:15 - Test method call
-- Tests.cs:18 - Another test call
-- Utils.cs:30 - Utility method call
-- README.md:45 - Documentation example
-- Comments.cs:8 - Code comment reference
-```
-
-### Class Renaming
-
-**Scenario**: You want to rename a class and update all references.
-
-```
-User: "Rename Calculator class to MathCalculator"
-
-Claude Code: I'll rename Calculator to MathCalculator throughout the project.
-→ Uses: lsp_rename_symbol
-
-Result: Updated 12 files:
-- Calculator.cs → MathCalculator.cs (file renamed)
-- Program.cs - Variable declarations updated
-- Tests.cs - Test class references updated
-- Factory.cs - Factory method updated
-- All using statements updated
-- All instantiation calls updated
+All references updated successfully ✅
 ```
 
 ### Code Formatting
 
-**Scenario**: You want to format your C# code according to conventions.
+**What you say**: "Format this C# file"
 
+**What happens**: Claude applies proper C# formatting.
+
+**Example response**:
 ```
-User: "Format this C# file according to standard conventions"
+Formatted Calculator.cs:
 
-Claude Code: I'll format the code according to C# conventions.
-→ Uses: lsp_format_document
+✅ Fixed indentation (8 lines)
+✅ Added proper spacing around operators  
+✅ Aligned braces according to C# conventions
+✅ Organized using statements
 
-Result: Applied formatting changes:
-- Fixed indentation (8 lines)
-- Corrected brace placement (4 locations)
-- Adjusted spacing around operators (12 locations)
-- Aligned method parameters (3 methods)
-- Standardized using statement order
-```
-
-## Unity Development Examples
-
-### Unity.Logging Usage
-
-**Scenario**: You're working with Unity.Logging in your Unity project.
-
-```
-User: "Check if my Unity.Logging usage is correct"
-
-Claude Code: I'll analyze your Unity.Logging usage.
-→ Uses: lsp_get_diagnostics
-
-Result: Unity.Logging analysis:
-✅ Log.Info() calls are properly formatted
-✅ All required using statements present
-✅ Log levels are appropriate
-⚠️ Consider using structured logging for better performance
+File is now properly formatted according to C# style guidelines.
 ```
 
-### MonoBehaviour Development
+## Code Completion
 
-**Scenario**: You're creating a Unity script with MonoBehaviour.
+### Getting IntelliSense
 
+**What you say**: "What methods are available on this string variable?"
+
+**What happens**: Claude shows available string methods.
+
+**Example response**:
 ```
-User: "What Unity lifecycle methods are available for MonoBehaviour?"
+Available methods on string:
 
-Claude Code: I'll show you available MonoBehaviour methods.
-→ Uses: lsp_get_completion
+🔤 Text Methods:
+• ToUpper() → string - Convert to uppercase
+• ToLower() → string - Convert to lowercase  
+• Trim() → string - Remove whitespace
+• Replace(string, string) → string - Replace text
 
-Result: MonoBehaviour lifecycle methods:
-- Start() - Called before first frame update
-- Update() - Called once per frame
-- FixedUpdate() - Called at fixed intervals
-- LateUpdate() - Called after all Update calls
-- OnEnable() - Called when object becomes active
-- OnDisable() - Called when object becomes inactive
-- OnDestroy() - Called when object is destroyed
-```
+🔍 Search Methods:
+• Contains(string) → bool - Check if contains text
+• StartsWith(string) → bool - Check if starts with text
+• IndexOf(string) → int - Find position of text
 
-### Unity Assembly References
+📏 Information:
+• Length → int - Number of characters
+• IsNullOrEmpty(string) → bool - Check if null/empty
 
-**Scenario**: You want to find Unity-specific classes and methods.
-
-```
-User: "Find all classes related to Unity physics"
-
-Claude Code: I'll search for Unity physics-related classes.
-→ Uses: lsp_get_workspace_symbols
-
-Result: Unity physics classes found:
-- Rigidbody (UnityEngine.Physics)
-- Collider (UnityEngine.Physics)
-- Joint (UnityEngine.Physics)
-- PhysicsMaterial (UnityEngine.Physics)
-- RaycastHit (UnityEngine.Physics)
-- Custom: PlayerPhysics (Scripts/PlayerPhysics.cs)
++ 50 more methods available...
 ```
 
-## Complex Workflow Examples
+**What you say**: "Show me all Console methods"
 
-### Debugging Workflow
+**What happens**: Claude shows Console class methods.
 
-**Scenario**: You have a bug and want to systematically debug it.
-
+**Example response**:
 ```
-1. User: "Check for errors in PlayerController.cs"
-   → Uses: lsp_get_diagnostics
-   Result: Found null reference warning on line 45
+Console class methods:
 
-2. User: "Show me the code around line 45"
-   → Uses: lsp_get_document_symbols
-   Result: Line 45 is in Update() method
+📝 Output:
+• WriteLine(string) - Write line to console
+• Write(string) - Write text without newline
+• Clear() - Clear console screen
 
-3. User: "Find all references to the variable causing the null reference"
-   → Uses: lsp_find_references
-   Result: Variable 'playerInput' used in 6 locations
+⌨️ Input:  
+• ReadLine() → string - Read user input
+• ReadKey() → ConsoleKeyInfo - Read single key
 
-4. User: "What methods initialize playerInput?"
-   → Uses: lsp_get_workspace_symbols
-   Result: InitializeInput() method in same class
-
-5. User: "Check if InitializeInput is called before Update"
-   → Uses: lsp_find_references
-   Result: InitializeInput() called in Start() method
+🎨 Formatting:
+• ForegroundColor - Set text color
+• BackgroundColor - Set background color
+• ResetColor() - Reset to default colors
 ```
 
-### Refactoring Workflow
+## Unity Development
 
-**Scenario**: You want to refactor a large class into smaller components.
+### Unity-Specific Help
 
+**What you say**: "Check this MonoBehaviour script for issues"
+
+**What happens**: Claude analyzes your Unity script.
+
+**Example response**:
 ```
-1. User: "Show me all methods in GameManager.cs"
-   → Uses: lsp_get_document_symbols
-   Result: 25 methods found, class is quite large
+Unity script analysis for PlayerController.cs:
 
-2. User: "Find methods related to UI management"
-   → Uses: lsp_get_workspace_symbols (query: "UI")
-   Result: 8 UI-related methods found
+✅ Inheritance: Properly inherits from MonoBehaviour
+✅ Unity Messages: Start() and Update() methods found
+⚠️ Performance: Update() called every frame - consider optimization
 
-3. User: "Show me all references to UpdateUI method"
-   → Uses: lsp_find_references
-   Result: Called from 12 different locations
+Suggestions:
+• Line 23: Cache GetComponent<Rigidbody>() in Start()
+• Line 31: Use CompareTag() instead of == for tag comparison
+• Line 45: Consider using Unity Events for jump action
 
-4. User: "Rename UpdateUI to RefreshUserInterface"
-   → Uses: lsp_rename_symbol
-   Result: Updated all 12 references
-
-5. User: "Format the refactored code"
-   → Uses: lsp_format_document
-   Result: Code formatted according to conventions
+Unity best practices compliance: 85% ✅
 ```
 
-### Unity Project Setup
+**What you say**: "What Unity logging methods can I use?"
 
-**Scenario**: You're setting up a new Unity project with proper logging.
+**What happens**: Claude shows Unity logging options.
 
+**Example response**:
 ```
-1. User: "What Unity.Logging methods are available?"
-   → Uses: lsp_get_completion
-   Result: Log.Info, Log.Warning, Log.Error, Log.Debug
+Unity logging methods available:
 
-2. User: "Check if Unity.Logging is properly configured"
-   → Uses: lsp_get_diagnostics
-   Result: Missing using Unity.Logging; statement
+📊 Debug Class:
+• Debug.Log(string message) - General information
+• Debug.LogWarning(string message) - Warning messages  
+• Debug.LogError(string message) - Error messages
+• Debug.LogException(Exception exception) - Exception logging
 
-3. User: "Show me examples of proper Unity.Logging usage"
-   → Uses: lsp_get_workspace_symbols
-   Result: Found 3 files with proper logging patterns
+🏷️ With Context:
+• Debug.Log("Health changed to " + health, gameObject)
+• Debug.LogWarning("Pathfinding failed for " + target, this)
 
-4. User: "Find all Debug.Log calls that should be replaced"
-   → Uses: lsp_find_references
-   Result: 15 Debug.Log calls found for replacement
-```
-
-## Performance Optimization Examples
-
-### Code Performance Analysis
-
-**Scenario**: You want to optimize your code performance.
-
-```
-User: "Find all methods that might have performance issues"
-
-Claude Code: I'll analyze your code for potential performance issues.
-→ Uses: lsp_get_diagnostics + lsp_get_code_actions
-
-Result: Performance suggestions:
-- Use StringBuilder instead of string concatenation (3 locations)
-- Consider caching expensive calculations (2 methods)
-- Optimize LINQ queries (4 locations)
-- Use object pooling for frequently created objects (1 class)
+💡 Best Practice: Use Debug.Log for development and consider logging frameworks for production.
 ```
 
-### Memory Usage Optimization
+### Unity Project Analysis
 
-**Scenario**: You want to reduce memory allocations.
+**What you say**: "What Unity classes are available in my project?"
 
+**What happens**: Claude searches for Unity-related classes.
+
+**Example response**:
 ```
-User: "Find places where we create unnecessary objects"
+Unity classes in your project:
 
-Claude Code: I'll look for potential memory optimization opportunities.
-→ Uses: lsp_get_diagnostics + lsp_get_workspace_symbols
+🎮 MonoBehaviour Scripts:
+• PlayerController - Controls player movement
+• EnemyAI - AI behavior system
+• GameManager - Game state management
 
-Result: Memory optimization opportunities:
-- Frequent List<T> allocations in GameLoop.cs
-- String concatenation in Logger.cs
-- Unnecessary boxing in ConfigManager.cs
-- Consider using struct instead of class for Point2D
-```
+📦 ScriptableObjects:  
+• WeaponData - Weapon configuration
+• LevelSettings - Level-specific settings
 
-## Testing Examples
+🔧 Editor Scripts:
+• CustomPropertyDrawer - Custom inspector UI
+• BuildPostProcessor - Build automation
 
-### Test Coverage Analysis
-
-**Scenario**: You want to ensure your code is properly tested.
-
-```
-User: "Find all public methods that might need unit tests"
-
-Claude Code: I'll find public methods and check for corresponding tests.
-→ Uses: lsp_get_workspace_symbols + lsp_find_references
-
-Result: Methods potentially needing tests:
-- Calculator.AddNumbers (has tests)
-- Calculator.SubtractNumbers (has tests)
-- ValidationHelper.IsValidEmail (no tests found)
-- DataProcessor.ProcessData (no tests found)
+Total: 6 Unity scripts found
 ```
 
-### Test Method Generation
+## Advanced Scenarios
 
-**Scenario**: You want to understand how to test a specific method.
+### Complex Refactoring
 
+**What you say**: "Help me refactor this method to be more readable"
+
+**What happens**: Claude analyzes and suggests improvements.
+
+**Example response**:
 ```
-User: "How should I test the ValidateInput method?"
+Refactoring suggestions for CalculateScore():
 
-Claude Code: I'll analyze the ValidateInput method structure.
-→ Uses: lsp_get_document_symbols + lsp_get_definitions
+Current issues:
+• Method too long (45 lines, recommend < 20)
+• Multiple responsibilities (calculation + validation + logging)
+• Nested if statements (depth 4, recommend < 3)
 
-Result: ValidateInput method analysis:
-- Parameters: string input, ValidationRules rules
-- Returns: bool
-- Throws: ArgumentNullException, ValidationException
-- Suggest testing: null input, empty input, valid input, invalid input
-```
+Suggested refactoring:
+1. Extract validation into ValidateInput()
+2. Extract calculation into ComputeBaseScore()  
+3. Extract logging into LogScoreCalculation()
+4. Use early returns to reduce nesting
 
-## Integration Examples
-
-### API Integration
-
-**Scenario**: You're integrating with external APIs.
-
-```
-User: "Find all HTTP client usage in the project"
-
-Claude Code: I'll search for HTTP client related code.
-→ Uses: lsp_get_workspace_symbols + lsp_find_references
-
-Result: HTTP client usage found:
-- ApiClient.cs - Main HTTP client wrapper
-- UserService.cs - User API calls
-- DataSyncService.cs - Data synchronization
-- All using proper async/await patterns
+Would you like me to show the refactored code?
 ```
 
-### Database Integration
+### Cross-File Analysis
 
-**Scenario**: You want to review database access patterns.
+**What you say**: "Find all methods that use the User class"
 
+**What happens**: Claude searches across your entire solution.
+
+**Example response**:
 ```
-User: "Check database connection usage for potential issues"
+Methods using User class across solution:
 
-Claude Code: I'll analyze database connection patterns.
-→ Uses: lsp_get_diagnostics + lsp_get_workspace_symbols
+📁 UserService.cs:
+• CreateUser(string name, string email) → User
+• GetUser(int id) → User
+• UpdateUser(User user) → bool
+• DeleteUser(int id) → bool
 
-Result: Database analysis:
-✅ All connections properly disposed
-✅ Using parameterized queries
-⚠️ Consider connection pooling in DataAccess.cs
-⚠️ Add retry logic for transient failures
+📁 AuthenticationController.cs:
+• Login(string email, string password) → User
+• Register(UserRegistrationModel model) → User
+
+📁 UserRepository.cs:
+• SaveUser(User user) → void
+• FindByEmail(string email) → User
+
+Found 8 methods across 3 files using User class.
 ```
 
-## Tips for Effective Usage
+## Tips for Better Results
 
-### Best Practices
+### Be Specific
+- ❌ "Check my code" 
+- ✅ "Check Program.cs for syntax errors"
 
-1. **Start with Diagnostics**: Always check for errors first
-2. **Use Workspace Symbols**: Great for exploring unknown codebases
-3. **Combine Tools**: Use multiple tools for complex analysis
-4. **Format Regularly**: Keep code clean with regular formatting
-5. **Test Renames**: Use find references before renaming symbols
+### Use Natural Language
+- ❌ "Run lsp_get_diagnostics on file X"
+- ✅ "Find errors in file X"
 
-### Common Patterns
+### Ask Follow-up Questions
+- "Why is this error happening?"
+- "How can I fix this warning?"
+- "What's the best practice here?"
 
-- **Error → Fix**: `lsp_get_diagnostics` → `lsp_get_code_actions`
-- **Explore → Navigate**: `lsp_get_workspace_symbols` → `lsp_get_definitions`
-- **Understand → Refactor**: `lsp_find_references` → `lsp_rename_symbol`
-- **Code → Complete**: `lsp_get_completion` → `lsp_format_document`
+### Reference Files Clearly
+- "Check the Calculator class in Calculator.cs"
+- "Find all usages of the Login method"
+- "Show me the structure of my Models folder"
 
-### Unity-Specific Tips
+## Getting Help
 
-- Use Unity.Logging instead of Debug.Log for better performance
-- Leverage MonoBehaviour lifecycle methods for proper initialization
-- Use workspace symbols to find Unity-specific classes and methods
-- Check diagnostics regularly during Unity development
+If something isn't working as expected:
 
-For more detailed information about each tool, see the [API Reference](API.md).
-For installation and setup, see the [Installation Guide](INSTALLATION.md).
-For Claude Code integration, see the [Claude Code Guide](CLAUDE.md).
+1. **Check server status**: "Is the C# server running?"
+2. **Verify file paths**: Make sure you're referencing the correct file names
+3. **Wait for initialization**: Large projects may take 1-2 minutes to fully load
+4. **Ask for clarification**: "I'm not seeing IntelliSense, what should I check?"
+
+For setup issues, see the [Installation Guide](INSTALLATION.md) or [Troubleshooting Guide](CLAUDE.md#troubleshooting).
