@@ -59,7 +59,7 @@ Once configured, chat naturally with Claude Code about your C# projects:
 ### Unity Development
 ```
 "Check this MonoBehaviour script"
-"Find all Unity.Logging usage"
+"Find all Debug.Log usage"
 "What Unity classes are available?"
 "Help me fix this Unity script error"
 ```

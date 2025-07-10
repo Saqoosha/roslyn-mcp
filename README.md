@@ -11,7 +11,66 @@ Get professional C# development tools in Claude Code - error checking, code comp
 - **Code Navigation**: Jump to definitions, find references
 - **Refactoring**: Safe renaming across your entire project
 - **Code Formatting**: Automatic C# formatting
-- **Unity Support**: Full Unity project integration with MonoBehaviour, Unity.Logging, and custom assemblies
+- **Unity Support**: Full Unity project integration with MonoBehaviour and custom assemblies
+
+## 📊 Feature Comparison
+
+How Roslyn MCP compares to other C# development tools:
+
+| Feature | Description | Roslyn LSP | VS Code C# Extension | Roslyn MCP | Notes |
+|---------|-------------|------------|---------------------|------------|-------|
+| **Core Language Features** |
+| **Error Detection** | Syntax and semantic errors | ✅ | ✅ | ✅ | Real-time diagnostics |
+| **Code Completion** | IntelliSense with type info | ✅ | ✅ | ✅ | Context-aware suggestions |
+| **Go to Definition** | Navigate to symbol definitions | ✅ | ✅ | ✅ | Cross-file navigation |
+| **Find References** | Find all symbol usages | ✅ | ✅ | ✅ | Project-wide search |
+| **Document Symbols** | List symbols in current file | ✅ | ✅ | ✅ | Classes, methods, properties |
+| **Workspace Symbols** | Search symbols across project | ✅ | ✅ | ✅ | Global symbol search |
+| **Code Actions** | Quick fixes and refactoring | ✅ | ✅ | ✅ | Smart suggestions |
+| **Symbol Rename** | Safe rename across project | ✅ | ✅ | ✅ | Update all references |
+| **Code Formatting** | Auto-format according to style | ✅ | ✅ | ✅ | C# conventions |
+| **Advanced Features** |
+| **Signature Help** | Parameter hints while typing | ✅ | ✅ | ❌ | Removed for Unity compatibility |
+| **Hover Information** | Type info on mouse hover | ✅ | ✅ | ❌ | Not needed in chat interface |
+| **Document Highlight** | Symbol highlighting | ✅ | ✅ | ❌ | Chat interface doesn't need |
+| **Go to Implementation** | Navigate to implementations | ✅ | ✅ | ⚠️ | Via definitions workaround |
+| **Go to Declaration** | Navigate to declarations | ✅ | ✅ | ⚠️ | Via definitions workaround |
+| **Call Hierarchy** | Method call relationships | ✅ | ✅ | ⚠️ | Via references workaround |
+| **Inheritance Hierarchy** | Class inheritance tree | ✅ | ✅ | ⚠️ | Via manual navigation |
+| **Semantic Tokens** | Advanced syntax highlighting | ✅ | ✅ | ❌ | Not applicable to chat |
+| **Code Folding** | Collapse code sections | ✅ | ✅ | ❌ | Not applicable to chat |
+| **Refactoring & Code Gen** |
+| **Extract Method** | Extract code into method | ✅ | ✅ | ⚠️ | Via code actions |
+| **Extract Interface** | Extract interface from class | ✅ | ✅ | ⚠️ | Via code actions |
+| **Move Type** | Move type to new file | ✅ | ✅ | ⚠️ | Via code actions |
+| **Generate Code** | Auto-generate boilerplate | ✅ | ✅ | ⚠️ | Via code actions |
+| **Override Completion** | Generate override methods | ✅ | ✅ | ⚠️ | Via completion |
+| **Project System** |
+| **Solution Support** | Multi-project solutions | ✅ | ✅ | ✅ | Full solution loading |
+| **NuGet Integration** | Package dependencies | ✅ | ✅ | ✅ | Automatic resolution |
+| **MSBuild Integration** | Build system support | ✅ | ✅ | ✅ | Project file parsing |
+| **Assembly Loading** | Runtime assembly discovery | ✅ | ✅ | ✅ | Automatic assembly loading |
+| **Unity Integration** |
+| **MonoBehaviour Support** | Unity base class IntelliSense | ⚠️ | ✅ | ✅ | Full Unity project support |
+| **Unity Packages** | Unity package system | ⚠️ | ✅ | ✅ | All Unity packages loaded |
+| **Unity Assemblies** | Unity package assemblies | ⚠️ | ✅ | ✅ | All Unity packages loaded |
+| **Custom Assemblies** | Assembly definition support | ⚠️ | ✅ | ✅ | .asmdef file support |
+| **Unity Messages** | Unity callback recognition | ⚠️ | ✅ | ✅ | Start, Update, OnCollision, etc. |
+| **Unique Features** |
+| **Natural Language** | Chat-based interaction | ❌ | ❌ | ✅ | **Unique to Roslyn MCP** |
+| **Claude Code Integration** | Native MCP protocol | ❌ | ❌ | ✅ | **Unique to Roslyn MCP** |
+| **Conversational Debugging** | Error explanations via chat | ❌ | ❌ | ✅ | **Unique to Roslyn MCP** |
+| **Context-Aware Help** | Smart suggestions in chat | ❌ | ❌ | ✅ | **Unique to Roslyn MCP** |
+
+**Legend**: ✅ Full Support | ⚡ Enhanced | ⚠️ Limited | ❌ Not Available
+
+### 🎯 Roslyn MCP Advantages
+
+- **Natural Language Interface**: Just ask "check my code for errors" instead of learning hotkeys
+- **Chat-Driven Development**: Get explanations and suggestions in conversational format  
+- **Claude Code Integration**: Native support for Claude's conversational AI interface
+- **Unity-Optimized**: Specifically tested and optimized for complex Unity projects
+- **Zero UI Complexity**: No need to learn IDE shortcuts or menu systems
 
 ## 🚀 Quick Setup
 
@@ -63,7 +122,7 @@ Works with any C# project:
 ## 🎮 Unity Features
 
 - **MonoBehaviour**: Full IntelliSense for Unity base classes
-- **Unity.Logging**: Complete support for `Log.Info()`, `Log.Warning()`, etc.
+- **Unity Packages**: Complete support for all Unity packages and APIs
 - **Custom Assemblies**: Works with assembly definitions (.asmdef)
 - **Large Projects**: Handles complex Unity solutions automatically
 

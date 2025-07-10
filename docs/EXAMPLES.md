@@ -261,25 +261,25 @@ Suggestions:
 Unity best practices compliance: 85% ✅
 ```
 
-**What you say**: "What Unity.Logging methods can I use?"
+**What you say**: "What Unity logging methods can I use?"
 
 **What happens**: Claude shows Unity logging options.
 
 **Example response**:
 ```
-Unity.Logging methods available:
+Unity logging methods available:
 
-📊 Log Levels:
-• Log.Info(string message) - General information
-• Log.Warning(string message) - Warning messages  
-• Log.Error(string message) - Error messages
-• Log.Debug(string message) - Debug information
+📊 Debug Class:
+• Debug.Log(string message) - General information
+• Debug.LogWarning(string message) - Warning messages  
+• Debug.LogError(string message) - Error messages
+• Debug.LogException(Exception exception) - Exception logging
 
-🏷️ With Categories:
-• Log.Info("Player", "Health changed to {0}", health)
-• Log.Warning("AI", "Pathfinding failed for {0}", target)
+🏷️ With Context:
+• Debug.Log("Health changed to " + health, gameObject)
+• Debug.LogWarning("Pathfinding failed for " + target, this)
 
-💡 Best Practice: Use structured logging with categories for better debugging.
+💡 Best Practice: Use Debug.Log for development and consider logging frameworks for production.
 ```
 
 ### Unity Project Analysis
