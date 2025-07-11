@@ -54,6 +54,7 @@ export class RoslynLSPClient extends EventEmitter {
     languageId: string;
     version: number;
     content: string;
+    lastModified?: number; // Track file modification time
   }>();
 
   constructor(config: ServerConfig) {
@@ -426,7 +427,7 @@ export class RoslynLSPClient extends EventEmitter {
   }
 
   // Document synchronization methods
-  async openDocument(uri: string, languageId: string, content: string): Promise<void> {
+  async openDocument(uri: string, languageId: string, content: string, filePath?: string): Promise<void> {
     // Check if document is already open
     if (this.openDocuments.has(uri)) {
       this.logger.debug(`Document already open: ${uri}`);
@@ -435,12 +436,25 @@ export class RoslynLSPClient extends EventEmitter {
 
     const version = 1;
     
+    // Get file modification time if file path provided
+    let lastModified: number | undefined;
+    if (filePath) {
+      try {
+        const { statSync } = await import('fs');
+        const stats = statSync(filePath);
+        lastModified = stats.mtimeMs;
+      } catch (error) {
+        this.logger.debug(`Could not get file stats for ${filePath}: ${error}`);
+      }
+    }
+    
     // Store document state
     this.openDocuments.set(uri, {
       uri,
       languageId,
       version,
       content,
+      lastModified,
     });
 
     // Send textDocument/didOpen notification to LSP
@@ -513,6 +527,39 @@ export class RoslynLSPClient extends EventEmitter {
     return this.openDocuments.get(uri)?.version;
   }
 
+  // Check if document needs refresh due to external changes
+  async ensureDocumentFresh(uri: string, filePath: string): Promise<void> {
+    const doc = this.openDocuments.get(uri);
+    if (!doc) {
+      // Document not open, nothing to check
+      return;
+    }
+
+    try {
+      const { statSync, readFileSync } = await import('fs');
+      const stats = statSync(filePath);
+      const currentMtime = stats.mtimeMs;
+
+      // Check if file has been modified externally
+      if (doc.lastModified && currentMtime > doc.lastModified) {
+        this.logger.info(`File modified externally, refreshing: ${uri}`);
+        
+        // Close and reopen the document to avoid didChange issues
+        await this.closeDocument(uri);
+        
+        // Read the new content
+        const newContent = readFileSync(filePath, 'utf8');
+        
+        // Reopen with fresh content
+        await this.openDocument(uri, 'csharp', newContent, filePath);
+        
+        this.logger.debug(`Document refreshed: ${uri}`);
+      }
+    } catch (error) {
+      this.logger.debug(`Could not check file freshness for ${filePath}: ${error}`);
+    }
+  }
+
   // Enhanced hover method with automatic document opening
   async getHoverWithDocSync(filePath: string, line: number, character: number): Promise<any> {
     const { resolve: resolvePath } = await import('path');
@@ -526,13 +573,16 @@ export class RoslynLSPClient extends EventEmitter {
     if (!this.isDocumentOpen(uri)) {
       try {
         const content = readFileSync(absolutePath, 'utf8');
-        await this.openDocument(uri, 'csharp', content);
+        await this.openDocument(uri, 'csharp', content, absolutePath);
         
         // Give LSP time to process the document
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
       }
+    } else {
+      // Document is open, ensure it's fresh
+      await this.ensureDocumentFresh(uri, absolutePath);
     }
 
     // Now perform hover request
@@ -552,13 +602,16 @@ export class RoslynLSPClient extends EventEmitter {
     if (!this.isDocumentOpen(uri)) {
       try {
         const content = readFileSync(absolutePath, 'utf8');
-        await this.openDocument(uri, 'csharp', content);
+        await this.openDocument(uri, 'csharp', content, absolutePath);
         
         // Give LSP time to process the document
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
       }
+    } else {
+      // Document is open, ensure it's fresh
+      await this.ensureDocumentFresh(uri, absolutePath);
     }
 
     // Now perform completion request
@@ -578,13 +631,16 @@ export class RoslynLSPClient extends EventEmitter {
     if (!this.isDocumentOpen(uri)) {
       try {
         const content = readFileSync(absolutePath, 'utf8');
-        await this.openDocument(uri, 'csharp', content);
+        await this.openDocument(uri, 'csharp', content, absolutePath);
         
         // Give LSP time to process the document
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
       }
+    } else {
+      // Document is open, ensure it's fresh
+      await this.ensureDocumentFresh(uri, absolutePath);
     }
 
     // Now perform signature help request
@@ -604,13 +660,16 @@ export class RoslynLSPClient extends EventEmitter {
     if (!this.isDocumentOpen(uri)) {
       try {
         const content = readFileSync(absolutePath, 'utf8');
-        await this.openDocument(uri, 'csharp', content);
+        await this.openDocument(uri, 'csharp', content, absolutePath);
         
         // Give LSP time to process the document
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
       }
+    } else {
+      // Document is open, ensure it's fresh
+      await this.ensureDocumentFresh(uri, absolutePath);
     }
 
     // Now perform code actions request
@@ -630,13 +689,16 @@ export class RoslynLSPClient extends EventEmitter {
     if (!this.isDocumentOpen(uri)) {
       try {
         const content = readFileSync(absolutePath, 'utf8');
-        await this.openDocument(uri, 'csharp', content);
+        await this.openDocument(uri, 'csharp', content, absolutePath);
         
         // Give LSP time to process the document and generate diagnostics
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
         throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
       }
+    } else {
+      // Document is open, ensure it's fresh
+      await this.ensureDocumentFresh(uri, absolutePath);
     }
 
     // Now perform diagnostics request
@@ -656,13 +718,16 @@ export class RoslynLSPClient extends EventEmitter {
     if (!this.isDocumentOpen(uri)) {
       try {
         const content = readFileSync(absolutePath, 'utf8');
-        await this.openDocument(uri, 'csharp', content);
+        await this.openDocument(uri, 'csharp', content, absolutePath);
         
         // Give LSP time to process the document
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
       }
+    } else {
+      // Document is open, ensure it's fresh
+      await this.ensureDocumentFresh(uri, absolutePath);
     }
 
     // Now perform formatting request
@@ -707,13 +772,16 @@ export class RoslynLSPClient extends EventEmitter {
     if (!this.isDocumentOpen(uri)) {
       try {
         const content = readFileSync(absolutePath, 'utf8');
-        await this.openDocument(uri, 'csharp', content);
+        await this.openDocument(uri, 'csharp', content, absolutePath);
         
         // Give LSP time to process the document
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
       }
+    } else {
+      // Document is open, ensure it's fresh
+      await this.ensureDocumentFresh(uri, absolutePath);
     }
 
     // CRITICAL: First call prepareRename to validate the position
