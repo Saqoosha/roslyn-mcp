@@ -103,13 +103,16 @@ async function executeDocumentSymbols(input: DocumentSymbolsInput, context: Tool
     if (!lspClient.isDocumentOpen(uri)) {
       try {
         const content = readFileSync(absolutePath, 'utf8');
-        await lspClient.openDocument(uri, 'csharp', content);
+        await lspClient.openDocument(uri, 'csharp', content, absolutePath);
         
         // Give LSP time to process the document
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         throw new Error(`Failed to read file: ${absolutePath} - ${error}`);
       }
+    } else {
+      // Document is open, ensure it's fresh
+      await (lspClient as any).ensureDocumentFresh(uri, absolutePath);
     }
 
     // Call LSP documentSymbols
